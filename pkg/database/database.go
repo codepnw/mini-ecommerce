@@ -22,7 +22,6 @@ func ConnectPostgres(cfg config.DBConfig) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("db open failed: %w", err)
 	}
-	defer db.Close()
 
 	if err = db.Ping(); err != nil {
 		return nil, fmt.Errorf("db connect failed: %w", err)
