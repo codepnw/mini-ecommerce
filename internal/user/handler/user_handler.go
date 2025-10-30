@@ -37,7 +37,7 @@ func (h *userHandler) Register(c *gin.Context) {
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 	}
-	result, err := h.uc.Create(c, input)
+	result, err := h.uc.Register(c, input)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 			response.BadRequest(c, errs.ErrEmailAlreadyExists.Error())
@@ -76,6 +76,39 @@ func (h *userHandler) Login(c *gin.Context) {
 	response.OK(c, "login successfully", result)
 }
 
-func (h *userHandler) RefreshToken(c *gin.Context) {}
+func (h *userHandler) RefreshToken(c *gin.Context) {
+	req := new(RefreshTokenReq)
+	if err := c.ShouldBindJSON(req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := validate.Struct(req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
 
-func (h *userHandler) Logout(c *gin.Context) {}
+	newToken, err := h.uc.RefreshToken(c, req.RefreshToken)
+	if err != nil {
+		response.InternalServerError(c, err)
+		return
+	}
+	response.OK(c, "generate new token successfully", newToken)
+}
+
+func (h *userHandler) Logout(c *gin.Context) {
+	req := new(RefreshTokenReq)
+	if err := c.ShouldBindJSON(req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := validate.Struct(req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := h.uc.Logout(c, req.RefreshToken); err != nil {
+		response.InternalServerError(c, err)
+		return
+	}
+	response.NoContent(c, "logout!")
+}

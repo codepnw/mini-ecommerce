@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/codepnw/mini-ecommerce/internal/consts"
 	"github.com/codepnw/mini-ecommerce/internal/user"
 	"github.com/codepnw/mini-ecommerce/pkg/config"
 	"github.com/golang-jwt/jwt/v5"
@@ -16,7 +17,7 @@ type JWTToken struct {
 }
 
 type UserClaims struct {
-	ID    int
+	ID    int64
 	Email string
 	Role  string
 	*jwt.RegisteredClaims
@@ -33,13 +34,11 @@ func InitJWT(cfg config.JWTConfig) (*JWTToken, error) {
 }
 
 func (t *JWTToken) GenerateAccessToken(u *user.User) (string, error) {
-	duration := time.Hour * 24
-	return t.generateToken(t.secretKey, u, duration)
+	return t.generateToken(t.secretKey, u, consts.AccessTokenDuration)
 }
 
 func (t *JWTToken) GenerateRefreshToken(u *user.User) (string, error) {
-	duration := time.Hour * 24 * 7
-	return t.generateToken(t.refreshKey, u, duration)
+	return t.generateToken(t.refreshKey, u, consts.RefreshTokenDuration)
 }
 
 func (t *JWTToken) generateToken(key string, u *user.User, duration time.Duration) (string, error) {

@@ -7,7 +7,7 @@ import (
 )
 
 type userModel struct {
-	ID        int       `db:"id"`
+	ID        int64     `db:"id"`
 	Email     string    `db:"email"`
 	Password  string    `db:"password"`
 	FirstName string    `db:"first_name"`

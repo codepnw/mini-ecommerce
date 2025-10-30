@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS idx_auth_user_id;
+DROP INDEX IF EXISTS idx_auth_token;
+
+DROP TYPE IF EXISTS user_roles CASCADE;
+DROP TABLE IF EXISTS auth;

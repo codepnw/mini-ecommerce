@@ -14,6 +14,7 @@ type routeConfig struct {
 	router *gin.Engine
 	db     *sql.DB
 	token  *jwt.JWTToken
+	tx     *database.TxManager
 }
 
 func RegisterRoutes(cfg *config.EnvConfig) error {
@@ -30,12 +31,17 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 		return err
 	}
 
+	tx := database.InitTransaction(db)
+
 	routeCfg := &routeConfig{
 		router: router,
 		db:     db,
 		token:  token,
+		tx:     tx,
 	}
-	routeCfg.UserRoutes()
+	if err = routeCfg.UserRoutes(); err != nil {
+		return err
+	}
 
 	port := fmt.Sprintf(":%d", cfg.APP.Port)
 	return router.Run(port)
