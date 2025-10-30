@@ -32,12 +32,6 @@ func OK(c *gin.Context, message string, data any) {
 	})
 }
 
-func NoContent(c *gin.Context, message string) {
-	c.JSON(http.StatusNoContent, gin.H{
-		"response": SuccessResponse{
-			Code:    http.StatusNoContent,
-			Message: message,
-			Data:    nil,
-		},
-	})
+func NoContent(c *gin.Context) {
+	c.JSON(http.StatusNoContent, nil)
 }

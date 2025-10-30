@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/codepnw/mini-ecommerce/internal/errs"
@@ -43,6 +44,9 @@ func (r *userRepository) Insert(ctx context.Context, db database.DBExec, input *
 		m.LastName,
 	).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			return nil, errs.ErrEmailAlreadyExists
+		}
 		return nil, err
 	}
 	return r.modelToDomain(m), nil

@@ -2,7 +2,6 @@ package userhandler
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/codepnw/mini-ecommerce/internal/errs"
 	"github.com/codepnw/mini-ecommerce/internal/user"
@@ -39,8 +38,8 @@ func (h *userHandler) Register(c *gin.Context) {
 	}
 	result, err := h.uc.Register(c, input)
 	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-			response.BadRequest(c, errs.ErrEmailAlreadyExists.Error())
+		if errors.Is(err, errs.ErrEmailAlreadyExists) {
+			response.BadRequest(c, err.Error())
 			return
 		}
 		response.InternalServerError(c, err)
@@ -66,8 +65,8 @@ func (h *userHandler) Login(c *gin.Context) {
 	}
 	result, err := h.uc.Login(c, input)
 	if err != nil {
-		if errors.Is(err, errs.ErrUserNotFound) {
-			response.NotFound(c, err.Error())
+		if errors.Is(err, errs.ErrUserCredentials) {
+			response.BadRequest(c, err.Error())
 			return
 		}
 		response.InternalServerError(c, err)
@@ -89,8 +88,20 @@ func (h *userHandler) RefreshToken(c *gin.Context) {
 
 	newToken, err := h.uc.RefreshToken(c, req.RefreshToken)
 	if err != nil {
-		response.InternalServerError(c, err)
-		return
+		switch err {
+		case errs.ErrTokenRevoked:
+			response.Unauthorized(c, err.Error())
+			return
+		case errs.ErrTokenExpires:
+			response.Unauthorized(c, err.Error())
+			return
+		case errs.ErrTokenNotFound:
+			response.Unauthorized(c, err.Error())
+			return
+		default:
+			response.InternalServerError(c, err)
+			return
+		}
 	}
 	response.OK(c, "generate new token successfully", newToken)
 }
@@ -110,5 +121,5 @@ func (h *userHandler) Logout(c *gin.Context) {
 		response.InternalServerError(c, err)
 		return
 	}
-	response.NoContent(c, "logout!")
+	response.NoContent(c)
 }

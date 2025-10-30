@@ -105,18 +105,24 @@ func (u *userUsecase) Login(ctx context.Context, input *user.User) (*tokenRespon
 		return nil, errs.ErrUserCredentials
 	}
 
-	// Generate Token
-	response, err := u.tokenGenerate(userResult)
-	if err != nil {
-		return nil, err
-	}
+	var response *tokenResponse
+	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+		// Generate Token
+		resp, err := u.tokenGenerate(userResult)
+		if err != nil {
+			return err
+		}
 
-	// Save Token
-	inputAuth := u.inputAuth(userResult.ID, response.RefreshToken)
-	if err := u.repo.SaveRefreshToken(ctx, u.db, inputAuth); err != nil {
-		return nil, err
-	}
-	return response, nil
+		// Save Token
+		inputAuth := u.inputAuth(userResult.ID, response.RefreshToken)
+		if err := u.repo.SaveRefreshToken(ctx, tx, inputAuth); err != nil {
+			return err
+		}
+
+		response = resp
+		return nil
+	})
+	return response, err
 }
 
 func (u *userUsecase) RefreshToken(ctx context.Context, token string) (*tokenResponse, error) {
@@ -167,7 +173,13 @@ func (u *userUsecase) Logout(ctx context.Context, token string) error {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
-	return u.repo.RevokedRefreshToken(ctx, u.db, token)
+	err := u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+		if err := u.repo.RevokedRefreshToken(ctx, tx, token); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
 }
 
 type tokenResponse struct {
