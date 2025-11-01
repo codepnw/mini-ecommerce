@@ -16,24 +16,26 @@ import (
 	"github.com/codepnw/mini-ecommerce/pkg/validate"
 )
 
+//go:generate mockgen -source=user_usecase.go -destination=mock_user_usecase.go -package=userusecase
+
 type UserUsecase interface {
-	Register(ctx context.Context, input *user.User) (*tokenResponse, error)
-	Login(ctx context.Context, input *user.User) (*tokenResponse, error)
-	RefreshToken(ctx context.Context, token string) (*tokenResponse, error)
+	Register(ctx context.Context, input *user.User) (*TokenResponse, error)
+	Login(ctx context.Context, input *user.User) (*TokenResponse, error)
+	RefreshToken(ctx context.Context, token string) (*TokenResponse, error)
 	Logout(ctx context.Context, token string) error
 }
 
 type UserUsecaseConfig struct {
 	Repo  userrepository.UserRepository `validate:"required"`
 	Token *jwt.JWTToken                 `validate:"required"`
-	Tx    *database.TxManager           `validate:"required"`
-	DB    *sql.DB                       `validate:"required"`
+	Tx    database.TxManager            `validate:"required"`
+	DB    *sql.DB
 }
 
 type userUsecase struct {
 	repo  userrepository.UserRepository
 	token *jwt.JWTToken
-	tx    *database.TxManager
+	tx    database.TxManager
 	db    *sql.DB
 }
 
@@ -49,7 +51,7 @@ func NewUserUsecase(cfg *UserUsecaseConfig) (UserUsecase, error) {
 	}, nil
 }
 
-func (u *userUsecase) Register(ctx context.Context, input *user.User) (*tokenResponse, error) {
+func (u *userUsecase) Register(ctx context.Context, input *user.User) (*TokenResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
@@ -60,7 +62,7 @@ func (u *userUsecase) Register(ctx context.Context, input *user.User) (*tokenRes
 	}
 	input.Password = hashed
 
-	var response *tokenResponse
+	var response *TokenResponse
 	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		// Insert User
 		userCreated, err := u.repo.Insert(ctx, tx, input)
@@ -86,7 +88,7 @@ func (u *userUsecase) Register(ctx context.Context, input *user.User) (*tokenRes
 	return response, err
 }
 
-func (u *userUsecase) Login(ctx context.Context, input *user.User) (*tokenResponse, error) {
+func (u *userUsecase) Login(ctx context.Context, input *user.User) (*TokenResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
@@ -105,7 +107,7 @@ func (u *userUsecase) Login(ctx context.Context, input *user.User) (*tokenRespon
 		return nil, errs.ErrUserCredentials
 	}
 
-	var response *tokenResponse
+	var response *TokenResponse
 	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		// Generate Token
 		resp, err := u.tokenGenerate(userResult)
@@ -114,7 +116,7 @@ func (u *userUsecase) Login(ctx context.Context, input *user.User) (*tokenRespon
 		}
 
 		// Save Token
-		inputAuth := u.inputAuth(userResult.ID, response.RefreshToken)
+		inputAuth := u.inputAuth(userResult.ID, resp.RefreshToken)
 		if err := u.repo.SaveRefreshToken(ctx, tx, inputAuth); err != nil {
 			return err
 		}
@@ -125,7 +127,7 @@ func (u *userUsecase) Login(ctx context.Context, input *user.User) (*tokenRespon
 	return response, err
 }
 
-func (u *userUsecase) RefreshToken(ctx context.Context, token string) (*tokenResponse, error) {
+func (u *userUsecase) RefreshToken(ctx context.Context, token string) (*TokenResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
@@ -138,13 +140,13 @@ func (u *userUsecase) RefreshToken(ctx context.Context, token string) (*tokenRes
 	// Find User
 	userResult, err := u.repo.FindByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.ErrUserNotFound
+		if errors.Is(err, errs.ErrUserNotFound) {
+			return nil, err
 		}
 		return nil, err
 	}
 
-	var response *tokenResponse
+	var response *TokenResponse
 	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		// Revoked Token
 		if err := u.repo.RevokedRefreshToken(ctx, tx, token); err != nil {
@@ -182,12 +184,12 @@ func (u *userUsecase) Logout(ctx context.Context, token string) error {
 	return err
 }
 
-type tokenResponse struct {
+type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-func (u *userUsecase) tokenGenerate(input *user.User) (*tokenResponse, error) {
+func (u *userUsecase) tokenGenerate(input *user.User) (*TokenResponse, error) {
 	accessToken, err := u.token.GenerateAccessToken(input)
 	if err != nil {
 		return nil, err
@@ -198,7 +200,7 @@ func (u *userUsecase) tokenGenerate(input *user.User) (*tokenResponse, error) {
 		return nil, err
 	}
 
-	response := &tokenResponse{
+	response := &TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}

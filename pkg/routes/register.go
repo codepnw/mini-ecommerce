@@ -14,7 +14,7 @@ type routeConfig struct {
 	router *gin.Engine
 	db     *sql.DB
 	token  *jwt.JWTToken
-	tx     *database.TxManager
+	tx     database.TxManager
 }
 
 func RegisterRoutes(cfg *config.EnvConfig) error {

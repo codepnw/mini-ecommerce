@@ -36,15 +36,19 @@ type DBExec interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
-type TxManager struct {
+type TxManager interface {
+	WithTransaction(ctx context.Context, fn func(tx *sql.Tx) error) (err error)
+}
+
+type txManager struct {
 	db *sql.DB
 }
 
-func InitTransaction(db *sql.DB) *TxManager {
-	return &TxManager{db: db}
+func InitTransaction(db *sql.DB) TxManager {
+	return &txManager{db: db}
 }
 
-func (m *TxManager) WithTransaction(ctx context.Context, fn func(tx *sql.Tx) error) (err error) {
+func (m *txManager) WithTransaction(ctx context.Context, fn func(tx *sql.Tx) error) (err error) {
 	tx, err := m.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -55,7 +59,7 @@ func (m *TxManager) WithTransaction(ctx context.Context, fn func(tx *sql.Tx) err
 			panic(r)
 		} else if err != nil {
 			if rbErr := tx.Rollback(); rbErr != nil {
-				log.Fatalf("rollback: %w", rbErr)
+				log.Fatalf("rollback: %v", rbErr)
 			}
 		} else {
 			cmErr := tx.Commit()

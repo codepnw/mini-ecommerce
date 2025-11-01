@@ -12,6 +12,8 @@ import (
 	"github.com/codepnw/mini-ecommerce/pkg/database"
 )
 
+//go:generate mockgen -source=user_repository.go -destination=mock_user_repository.go -package=userrepository
+
 type UserRepository interface {
 	Insert(ctx context.Context, db database.DBExec, input *user.User) (*user.User, error)
 	FindByID(ctx context.Context, id int64) (*user.User, error)
@@ -67,6 +69,9 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*user.User, er
 		&u.UpdatedAt,
 	)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrUserNotFound
+		}
 		return nil, err
 	}
 	return u, nil
