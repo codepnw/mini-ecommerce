@@ -11,6 +11,9 @@ var (
 	ErrTokenNotFound = errors.New("token not found")
 	ErrTokenRevoked  = errors.New("token revoked")
 	ErrTokenExpires  = errors.New("token expires")
+
+	ErrUnauthorized  = errors.New("unauthorized")
+	ErrNoPermissions = errors.New("no permissions")
 )
 
 // Product
@@ -19,4 +22,5 @@ var (
 	ErrNoFieldsToUpdate    = errors.New("no fields to update")
 	ErrProductStockInvalid = errors.New("product stock greater than zero")
 	ErrProductPriceInvalid = errors.New("product price greater than zero")
+	ErrProductSKUExists    = errors.New("sku already exists")
 )

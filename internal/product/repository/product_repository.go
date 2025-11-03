@@ -8,8 +8,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/product"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 )
 
 type ProductRepository interface {
@@ -18,6 +18,8 @@ type ProductRepository interface {
 	List(ctx context.Context) ([]*product.Product, error)
 	Update(ctx context.Context, input *product.Product) (*product.Product, error)
 	Delete(ctx context.Context, id int64) error
+
+	SKUExists(ctx context.Context, sku string) (bool, error)
 }
 
 type productRepository struct {
@@ -31,7 +33,7 @@ func NewProductRepository(db *sql.DB) ProductRepository {
 func (r *productRepository) Insert(ctx context.Context, input *product.Product) (*product.Product, error) {
 	m := r.inputToModel(input)
 	query := `
-		INSERT INTO products (name, price, stock)
+		INSERT INTO products (name, price, stock, sku)
 		VALUES ($1, $2, $3) RETURNING id, created_at, updated_at
 	`
 	err := r.db.QueryRowContext(
@@ -40,6 +42,7 @@ func (r *productRepository) Insert(ctx context.Context, input *product.Product) 
 		m.Name,
 		m.Price,
 		m.Stock,
+		m.SKU,
 	).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -50,7 +53,7 @@ func (r *productRepository) Insert(ctx context.Context, input *product.Product) 
 func (r *productRepository) FindByID(ctx context.Context, id int64) (*product.Product, error) {
 	p := new(product.Product)
 	query := `
-		SELECT id, name, price, stock, created_at, updated_at
+		SELECT id, name, price, stock, sku, owner_id, created_at, updated_at
 		FROM products WHERE id = $1 LIMIT 1
 	`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
@@ -58,6 +61,8 @@ func (r *productRepository) FindByID(ctx context.Context, id int64) (*product.Pr
 		&p.Name,
 		&p.Price,
 		&p.Stock,
+		&p.SKU,
+		&p.OwnerID,
 		&p.CreatedAt,
 		&p.UpdatedAt,
 	)
@@ -72,7 +77,7 @@ func (r *productRepository) FindByID(ctx context.Context, id int64) (*product.Pr
 
 func (r *productRepository) List(ctx context.Context) ([]*product.Product, error) {
 	query := `
-		SELECT id, name, price, stock, created_at, updated_at
+		SELECT id, name, price, stock, sku, owner_id, created_at, updated_at
 		FROM products
 	`
 	rows, err := r.db.QueryContext(ctx, query)
@@ -88,6 +93,8 @@ func (r *productRepository) List(ctx context.Context) ([]*product.Product, error
 			&p.Name,
 			&p.Price,
 			&p.Stock,
+			&p.SKU,
+			&p.OwnerID,
 			&p.CreatedAt,
 			&p.UpdatedAt,
 		); err != nil {
@@ -122,6 +129,11 @@ func (r *productRepository) Update(ctx context.Context, input *product.Product) 
 		values = append(values, input.Stock)
 		idx++
 	}
+	if input.SKU != "" {
+		columns = append(columns, fmt.Sprintf("sku = $%d", idx))
+		values = append(values, input.SKU)
+		idx++
+	}
 
 	if len(columns) > 0 {
 		sb.WriteString(", ") // for updated_at
@@ -132,7 +144,7 @@ func (r *productRepository) Update(ctx context.Context, input *product.Product) 
 	values = append(values, input.ID)
 	idx++
 
-	sb.WriteString(" RETURNING id, name, price, stock, created_at, updated_at")
+	sb.WriteString(" RETURNING id, name, price, stock, sku, created_at, updated_at")
 
 	query := sb.String()
 	log.Println(query)
@@ -143,6 +155,7 @@ func (r *productRepository) Update(ctx context.Context, input *product.Product) 
 		&p.Name,
 		&p.Price,
 		&p.Stock,
+		&p.SKU,
 		&p.CreatedAt,
 		&p.UpdatedAt,
 	)
@@ -170,4 +183,18 @@ func (r *productRepository) Delete(ctx context.Context, id int64) error {
 		return errs.ErrProductNotFound
 	}
 	return nil
+}
+
+func (r *productRepository) SKUExists(ctx context.Context, sku string) (bool, error) {
+	var exists int
+	query := `SELECT 1 FROM products WHERE sku = 1 LIMIT 1`
+
+	err := r.db.QueryRowContext(ctx, query, sku).Scan(&exists)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

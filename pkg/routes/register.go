@@ -43,7 +43,9 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 	if err = routeCfg.UserRoutes(); err != nil {
 		return err
 	}
-	routeCfg.ProductRoutes()
+	if err = routeCfg.ProductRoutes(); err != nil {
+		return err
+	}
 
 	port := fmt.Sprintf(":%d", cfg.APP.Port)
 	return router.Run(port)

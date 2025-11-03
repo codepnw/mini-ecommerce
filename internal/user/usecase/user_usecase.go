@@ -23,6 +23,8 @@ type UserUsecase interface {
 	Login(ctx context.Context, input *user.User) (*TokenResponse, error)
 	RefreshToken(ctx context.Context, token string) (*TokenResponse, error)
 	Logout(ctx context.Context, token string) error
+
+	GetUser(ctx context.Context, userID int64) (*user.User, error)
 }
 
 type UserUsecaseConfig struct {
@@ -182,6 +184,13 @@ func (u *userUsecase) Logout(ctx context.Context, token string) error {
 		return nil
 	})
 	return err
+}
+
+func (u *userUsecase) GetUser(ctx context.Context, userID int64) (*user.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
+	defer cancel()
+
+	return u.repo.FindByID(ctx, userID)
 }
 
 type TokenResponse struct {

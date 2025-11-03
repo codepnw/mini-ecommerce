@@ -32,10 +32,19 @@ func (h *productHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Get User Context
+	userCtx, err := helper.GetCurrentUser(c)
+	if err != nil {
+		response.Unauthorized(c, err.Error())
+		return
+	}
+
 	input := &product.Product{
-		Name:  req.Name,
-		Price: req.Price,
-		Stock: req.Stock,
+		Name:    req.Name,
+		Price:   req.Price,
+		Stock:   req.Stock,
+		SKU:     req.SKU,
+		OwnerID: userCtx.ID,
 	}
 	resp, err := h.uc.Create(c, input)
 	if err != nil {
@@ -44,6 +53,9 @@ func (h *productHandler) Create(c *gin.Context) {
 			response.BadRequest(c, err.Error())
 			return
 		case errs.ErrProductStockInvalid:
+			response.BadRequest(c, err.Error())
+			return
+		case errs.ErrProductSKUExists:
 			response.BadRequest(c, err.Error())
 			return
 		default:
@@ -85,9 +97,16 @@ func (h *productHandler) GetAll(c *gin.Context) {
 }
 
 func (h *productHandler) Update(c *gin.Context) {
-	id, err := h.getParamID(c)
+	productID, err := h.getParamID(c)
 	if err != nil {
 		response.BadRequest(c, err.Error())
+		return
+	}
+
+	// Get User Context
+	userCtx, err := helper.GetCurrentUser(c)
+	if err != nil {
+		response.Unauthorized(c, err.Error())
 		return
 	}
 
@@ -104,7 +123,7 @@ func (h *productHandler) Update(c *gin.Context) {
 	var hasUpdate bool
 
 	input := &product.Product{
-		ID: id,
+		ID: productID,
 	}
 	if req.Name != nil {
 		input.Name = *req.Name
@@ -118,38 +137,58 @@ func (h *productHandler) Update(c *gin.Context) {
 		input.Stock = *req.Stock
 		hasUpdate = true
 	}
+	if req.SKU != nil {
+		input.SKU = *req.SKU
+		hasUpdate = true
+	}
 
 	if !hasUpdate {
 		response.BadRequest(c, errs.ErrNoFieldsToUpdate.Error())
 		return
 	}
 
-	resp, err := h.uc.Update(c, input)
+	resp, err := h.uc.Update(c, userCtx.ID, input)
 	if err != nil {
-		if errors.Is(err, errs.ErrProductNotFound) {
+		switch err {
+		case errs.ErrProductNotFound:
 			response.NotFound(c, err.Error())
 			return
+		case errs.ErrNoPermissions:
+			response.Forbidden(c, err.Error())
+			return
+		default:
+			response.InternalServerError(c, err)
+			return
 		}
-		response.InternalServerError(c, err)
-		return
 	}
 	response.OK(c, "", resp)
 }
 
 func (h *productHandler) Delete(c *gin.Context) {
-	id, err := h.getParamID(c)
+	productID, err := h.getParamID(c)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
 
-	if err = h.uc.Delete(c, id); err != nil {
-		if errors.Is(err, errs.ErrProductNotFound) {
+	userCtx, err := helper.GetCurrentUser(c)
+	if err != nil {
+		response.Unauthorized(c, err.Error())
+		return
+	}
+
+	if err = h.uc.Delete(c, userCtx.ID, productID); err != nil {
+		switch err {
+		case errs.ErrProductNotFound:
 			response.NotFound(c, err.Error())
 			return
+		case errs.ErrNoPermissions:
+			response.Forbidden(c, err.Error())
+			return
+		default:
+			response.InternalServerError(c, err)
+			return
 		}
-		response.InternalServerError(c, err)
-		return
 	}
 	response.NoContent(c)
 }

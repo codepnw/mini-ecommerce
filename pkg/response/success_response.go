@@ -23,6 +23,9 @@ func Created(c *gin.Context, data any) {
 }
 
 func OK(c *gin.Context, message string, data any) {
+	if message == "" {
+		message = "successfully"
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"response": SuccessResponse{
 			Code:    http.StatusOK,
