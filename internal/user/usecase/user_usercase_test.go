@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/codepnw/mini-ecommerce/internal/errs"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/user"
 	userrepository "github.com/codepnw/mini-ecommerce/internal/user/repository"
 	userusecase "github.com/codepnw/mini-ecommerce/internal/user/usecase"

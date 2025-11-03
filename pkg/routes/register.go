@@ -33,6 +33,7 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 
 	tx := database.InitTransaction(db)
 
+	// Register Routes
 	routeCfg := &routeConfig{
 		router: router,
 		db:     db,
@@ -42,6 +43,7 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 	if err = routeCfg.UserRoutes(); err != nil {
 		return err
 	}
+	routeCfg.ProductRoutes()
 
 	port := fmt.Sprintf(":%d", cfg.APP.Port)
 	return router.Run(port)

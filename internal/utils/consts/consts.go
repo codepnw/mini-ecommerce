@@ -8,3 +8,8 @@ const (
 	AccessTokenDuration  = time.Hour
 	RefreshTokenDuration = time.Hour * 24 * 7
 )
+
+// Params Key
+const (
+	ParamProductID = "product_id"
+)

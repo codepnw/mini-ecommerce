@@ -3,7 +3,7 @@ package userhandler
 import (
 	"errors"
 
-	"github.com/codepnw/mini-ecommerce/internal/errs"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/user"
 	userusecase "github.com/codepnw/mini-ecommerce/internal/user/usecase"
 	"github.com/codepnw/mini-ecommerce/pkg/response"

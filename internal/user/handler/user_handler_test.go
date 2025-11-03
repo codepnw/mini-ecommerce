@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/codepnw/mini-ecommerce/internal/errs"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	userhandler "github.com/codepnw/mini-ecommerce/internal/user/handler"
 	userusecase "github.com/codepnw/mini-ecommerce/internal/user/usecase"
 	"github.com/gin-gonic/gin"

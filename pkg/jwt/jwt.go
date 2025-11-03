@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/codepnw/mini-ecommerce/internal/consts"
+	"github.com/codepnw/mini-ecommerce/internal/utils/consts"
 	"github.com/codepnw/mini-ecommerce/internal/user"
 	"github.com/codepnw/mini-ecommerce/pkg/config"
 	"github.com/golang-jwt/jwt/v5"

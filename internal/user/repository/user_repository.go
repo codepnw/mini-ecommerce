@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codepnw/mini-ecommerce/internal/errs"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/user"
 	"github.com/codepnw/mini-ecommerce/pkg/database"
 )

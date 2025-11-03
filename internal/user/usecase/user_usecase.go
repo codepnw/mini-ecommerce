@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/codepnw/mini-ecommerce/internal/consts"
-	"github.com/codepnw/mini-ecommerce/internal/errs"
+	"github.com/codepnw/mini-ecommerce/internal/utils/consts"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/user"
 	userrepository "github.com/codepnw/mini-ecommerce/internal/user/repository"
 	"github.com/codepnw/mini-ecommerce/pkg/database"
