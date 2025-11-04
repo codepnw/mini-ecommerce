@@ -35,6 +35,21 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 	return m.recorder
 }
 
+// GetUser mocks base method.
+func (m *MockUserUsecase) GetUser(ctx context.Context, userID int64) (*user.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUser", ctx, userID)
+	ret0, _ := ret[0].(*user.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUser indicates an expected call of GetUser.
+func (mr *MockUserUsecaseMockRecorder) GetUser(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockUserUsecase)(nil).GetUser), ctx, userID)
+}
+
 // Login mocks base method.
 func (m *MockUserUsecase) Login(ctx context.Context, input *user.User) (*TokenResponse, error) {
 	m.ctrl.T.Helper()

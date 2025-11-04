@@ -12,6 +12,8 @@ import (
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 )
 
+//go:generate mockgen -source=product_repository.go -destination=mock_product_repository.go -package=productrepository
+
 type ProductRepository interface {
 	Insert(ctx context.Context, input *product.Product) (*product.Product, error)
 	FindByID(ctx context.Context, id int64) (*product.Product, error)
@@ -33,8 +35,8 @@ func NewProductRepository(db *sql.DB) ProductRepository {
 func (r *productRepository) Insert(ctx context.Context, input *product.Product) (*product.Product, error) {
 	m := r.inputToModel(input)
 	query := `
-		INSERT INTO products (name, price, stock, sku)
-		VALUES ($1, $2, $3) RETURNING id, created_at, updated_at
+		INSERT INTO products (name, price, stock, sku, owner_id)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, updated_at
 	`
 	err := r.db.QueryRowContext(
 		ctx,
@@ -43,6 +45,7 @@ func (r *productRepository) Insert(ctx context.Context, input *product.Product) 
 		m.Price,
 		m.Stock,
 		m.SKU,
+		m.OwnerID,
 	).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -187,7 +190,7 @@ func (r *productRepository) Delete(ctx context.Context, id int64) error {
 
 func (r *productRepository) SKUExists(ctx context.Context, sku string) (bool, error) {
 	var exists int
-	query := `SELECT 1 FROM products WHERE sku = 1 LIMIT 1`
+	query := `SELECT 1 FROM products WHERE sku = $1 LIMIT 1`
 
 	err := r.db.QueryRowContext(ctx, query, sku).Scan(&exists)
 	if err != nil {

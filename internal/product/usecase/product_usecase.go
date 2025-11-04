@@ -126,7 +126,7 @@ func (u *productUsecase) Delete(ctx context.Context, userID, productID int64) er
 	}
 
 	// Delete Product
-	if err := u.repo.Delete(ctx, productID); err != nil {
+	if err := u.repo.Delete(ctx, prodResp.ID); err != nil {
 		return err
 	}
 	return nil

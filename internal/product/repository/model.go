@@ -12,6 +12,7 @@ type productModel struct {
 	Price     float64   `db:"price"`
 	Stock     int       `db:"stock"`
 	SKU       string    `db:"sku"`
+	OwnerID   int64     `db:"owner_id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
@@ -23,6 +24,7 @@ func (r *productRepository) inputToModel(p *product.Product) *productModel {
 		Price:     p.Price,
 		Stock:     p.Stock,
 		SKU:       p.SKU,
+		OwnerID:   p.OwnerID,
 		CreatedAt: p.CreatedAt,
 		UpdatedAt: p.UpdatedAt,
 	}
@@ -35,6 +37,7 @@ func (r *productRepository) modelToDomain(p *productModel) *product.Product {
 		Price:     p.Price,
 		Stock:     p.Stock,
 		SKU:       p.SKU,
+		OwnerID:   p.OwnerID,
 		CreatedAt: p.CreatedAt,
 		UpdatedAt: p.UpdatedAt,
 	}
