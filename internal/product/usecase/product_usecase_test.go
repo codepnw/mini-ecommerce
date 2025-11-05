@@ -296,7 +296,8 @@ func TestUpdateProduct(t *testing.T) {
 			name: "fail no permission",
 			input: &product.Product{
 				ID:      1,
-				OwnerID: 10,
+				OwnerID: 11,
+				Stock:   20,
 			},
 			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase, input *product.Product) {
 				mockUser := &user.User{
@@ -304,11 +305,7 @@ func TestUpdateProduct(t *testing.T) {
 				}
 				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
 
-				mockProduct := &product.Product{
-					ID:      1,
-					OwnerID: 11,
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(input, nil).Times(1)
 			},
 			expectedErr: errs.ErrNoPermissions,
 		},
@@ -330,11 +327,7 @@ func TestUpdateProduct(t *testing.T) {
 				}
 				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
 
-				mockUpdateProduct := &product.Product{
-					ID:    1,
-					Stock: 20,
-				}
-				mockRepo.EXPECT().Update(gomock.Any(), mockUpdateProduct).Return(nil, errors.New("db error")).Times(1)
+				mockRepo.EXPECT().Update(gomock.Any(), input).Return(nil, errors.New("db error")).Times(1)
 			},
 			expectedErr: errors.New("db error"),
 		},
@@ -347,13 +340,10 @@ func TestUpdateProduct(t *testing.T) {
 		mockRepo := productrepository.NewMockProductRepository(ctrl)
 		mockUserUC := userusecase.NewMockUserUsecase(ctrl)
 		uc := productusecase.NewProductUsecase(mockRepo, mockUserUC)
-		if uc == nil {
-			t.Fatalf("product usecase is nil")
-		}
 
 		tc.mockFn(mockRepo, mockUserUC, tc.input)
 
-		result, err := uc.Update(context.Background(), tc.input.OwnerID, tc.input)
+		result, err := uc.Update(context.Background(), int64(10), tc.input)
 
 		if tc.expectedErr != nil {
 			assert.Error(t, err)
@@ -481,9 +471,6 @@ func TestDeleteProduct(t *testing.T) {
 		mockRepo := productrepository.NewMockProductRepository(ctrl)
 		mockUserUC := userusecase.NewMockUserUsecase(ctrl)
 		uc := productusecase.NewProductUsecase(mockRepo, mockUserUC)
-		if uc == nil {
-			t.Fatalf("product usecase is nil")
-		}
 
 		tc.mockFn(mockRepo, mockUserUC)
 

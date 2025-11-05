@@ -147,7 +147,7 @@ func (r *productRepository) Update(ctx context.Context, input *product.Product) 
 	values = append(values, input.ID)
 	idx++
 
-	sb.WriteString(" RETURNING id, name, price, stock, sku, created_at, updated_at")
+	sb.WriteString(" RETURNING id, name, price, stock, sku, owner_id, created_at, updated_at")
 
 	query := sb.String()
 	log.Println(query)
@@ -159,6 +159,7 @@ func (r *productRepository) Update(ctx context.Context, input *product.Product) 
 		&p.Price,
 		&p.Stock,
 		&p.SKU,
+		&p.OwnerID,
 		&p.CreatedAt,
 		&p.UpdatedAt,
 	)
