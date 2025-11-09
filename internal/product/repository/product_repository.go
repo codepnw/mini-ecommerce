@@ -17,6 +17,7 @@ import (
 type ProductRepository interface {
 	Insert(ctx context.Context, input *product.Product) (*product.Product, error)
 	FindByID(ctx context.Context, id int64) (*product.Product, error)
+	FindByIDForUpdate(ctx context.Context, tx *sql.Tx, id int64) (*product.Product, error)
 	List(ctx context.Context) ([]*product.Product, error)
 	Update(ctx context.Context, input *product.Product) (*product.Product, error)
 	Delete(ctx context.Context, id int64) error
@@ -60,6 +61,31 @@ func (r *productRepository) FindByID(ctx context.Context, id int64) (*product.Pr
 		FROM products WHERE id = $1 LIMIT 1
 	`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&p.ID,
+		&p.Name,
+		&p.Price,
+		&p.Stock,
+		&p.SKU,
+		&p.OwnerID,
+		&p.CreatedAt,
+		&p.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrProductNotFound
+		}
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *productRepository) FindByIDForUpdate(ctx context.Context, tx *sql.Tx, id int64) (*product.Product, error) {
+	p := new(product.Product)
+	query := `
+		SELECT id, name, price, stock, sku, owner_id, created_at, updated_at
+		FROM products WHERE id = $1 LIMIT 1 FOR UPDATE
+	`
+	err := tx.QueryRowContext(ctx, query, id).Scan(
 		&p.ID,
 		&p.Name,
 		&p.Price,

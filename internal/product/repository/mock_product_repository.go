@@ -6,6 +6,7 @@ package productrepository
 
 import (
 	context "context"
+	sql "database/sql"
 	reflect "reflect"
 
 	product "github.com/codepnw/mini-ecommerce/internal/product"
@@ -62,6 +63,21 @@ func (m *MockProductRepository) FindByID(ctx context.Context, id int64) (*produc
 func (mr *MockProductRepositoryMockRecorder) FindByID(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockProductRepository)(nil).FindByID), ctx, id)
+}
+
+// FindByIDForUpdate mocks base method.
+func (m *MockProductRepository) FindByIDForUpdate(ctx context.Context, tx *sql.Tx, id int64) (*product.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByIDForUpdate", ctx, tx, id)
+	ret0, _ := ret[0].(*product.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByIDForUpdate indicates an expected call of FindByIDForUpdate.
+func (mr *MockProductRepositoryMockRecorder) FindByIDForUpdate(ctx, tx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByIDForUpdate", reflect.TypeOf((*MockProductRepository)(nil).FindByIDForUpdate), ctx, tx, id)
 }
 
 // Insert mocks base method.

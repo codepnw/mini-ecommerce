@@ -23,4 +23,11 @@ var (
 	ErrProductStockInvalid = errors.New("product stock greater than zero")
 	ErrProductPriceInvalid = errors.New("product price greater than zero")
 	ErrProductSKUExists    = errors.New("sku already exists")
+	ErrProductNotEnough    = errors.New("product not enough stock")
+)
+
+// Cart
+var (
+	ErrInvalidQuantity = errors.New("invalid quantity")
+	ErrItemNotInCart   = errors.New("item not in cart")
 )

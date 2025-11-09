@@ -10,6 +10,8 @@ CREATE TABLE carts (
     user_id      BIGINT, -- สมมติ user_id เป็น BIGINT
     session_id   UUID,
     status       cart_status NOT NULL DEFAULT 'guest',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     -- Foreign Keys
     CONSTRAINT cart_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL

@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/codepnw/mini-ecommerce/internal/user"
@@ -20,4 +21,13 @@ func GetCurrentUser(c *gin.Context) (*user.User, error) {
 	return &user.User{
 		ID: 10,
 	}, nil
+}
+
+func GetUserIDFromCtx(ctx context.Context) int64 {
+	// TODO: change later
+	return 10
+}
+func GetSessionIDFromCtx(ctx context.Context) string {
+	// TODO: change later
+	return "mock_session_id"
 }
