@@ -73,8 +73,7 @@ func (u *cartUsecase) AddItemToCart(ctx context.Context, productID int64, quanti
 	}
 
 	// TODO: Clear Cache (Redis)
-
-	return u.GetCart(ctx)
+	return u.getCartView(ctx)
 }
 
 type CartItemView struct {
@@ -105,6 +104,11 @@ func (u *cartUsecase) GetCart(ctx context.Context) (*CartView, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
+	// TODO: Create Cache
+	return u.getCartView(ctx)
+}
+
+func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
 	userID := helper.GetUserIDFromCtx(ctx)
 	sessionID := helper.GetSessionIDFromCtx(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
@@ -162,8 +166,6 @@ func (u *cartUsecase) GetCart(ctx context.Context) (*CartView, error) {
 		finalUserID = &userID
 	}
 
-	// TODO: Create Cache
-
 	return &CartView{
 		CartID:     cartData.CartID,
 		UserID:     finalUserID,
@@ -214,7 +216,7 @@ func (u *cartUsecase) UpdateItemQuantity(ctx context.Context, cartItemID int64, 
 	}
 
 	// TODO: Clear Cache
-	return u.GetCart(ctx)
+	return u.getCartView(ctx)
 }
 
 func (u *cartUsecase) RemoveItemFromCart(ctx context.Context, cartItemID int64) (*CartView, error) {
@@ -237,5 +239,5 @@ func (u *cartUsecase) RemoveItemFromCart(ctx context.Context, cartItemID int64) 
 		return nil, err
 	}
 
-	return u.GetCart(ctx)
+	return u.getCartView(ctx)
 }

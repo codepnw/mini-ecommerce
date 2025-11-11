@@ -9,6 +9,8 @@ import (
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 )
 
+//go:generate mockgen -source=cart_repository.go -destination=mock_cart_repository.go -package=cartrepository
+
 type CartRepository interface {
 	GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID string) (*cart.Cart, error)
 	UpsertItem(ctx context.Context, tx *sql.Tx, item *cart.CartItem) error
