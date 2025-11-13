@@ -55,7 +55,9 @@ func (r *productRepository) Insert(ctx context.Context, input *product.Product) 
 }
 
 func (r *productRepository) FindByID(ctx context.Context, id int64) (*product.Product, error) {
-	p := new(product.Product)
+	pd := new(product.Product)
+	p := r.inputToModel(pd)
+
 	query := `
 		SELECT id, name, price, stock, sku, owner_id, created_at, updated_at
 		FROM products WHERE id = $1 LIMIT 1
@@ -76,7 +78,7 @@ func (r *productRepository) FindByID(ctx context.Context, id int64) (*product.Pr
 		}
 		return nil, err
 	}
-	return p, nil
+	return r.modelToDomain(p), nil
 }
 
 func (r *productRepository) FindByIDForUpdate(ctx context.Context, tx *sql.Tx, id int64) (*product.Product, error) {
