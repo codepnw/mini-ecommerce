@@ -40,12 +40,19 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 		token:  token,
 		tx:     tx,
 	}
+
+	// User Routes
 	if err = routeCfg.UserRoutes(); err != nil {
 		return err
 	}
+
+	// Product Routes
 	if err = routeCfg.ProductRoutes(); err != nil {
 		return err
 	}
+
+	// Cart Routes
+	routeCfg.CartRoutes()
 
 	port := fmt.Sprintf(":%d", cfg.APP.Port)
 	return router.Run(port)

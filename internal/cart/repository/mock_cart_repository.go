@@ -96,7 +96,7 @@ func (mr *MockCartRepositoryMockRecorder) GetCartItems(ctx, cartID interface{}) 
 }
 
 // GetOrCreateActiveCart mocks base method.
-func (m *MockCartRepository) GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID string) (*cart.Cart, error) {
+func (m *MockCartRepository) GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID sql.NullString) (*cart.Cart, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrCreateActiveCart", ctx, userID, sessionID)
 	ret0, _ := ret[0].(*cart.Cart)

@@ -12,7 +12,7 @@ import (
 //go:generate mockgen -source=cart_repository.go -destination=mock_cart_repository.go -package=cartrepository
 
 type CartRepository interface {
-	GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID string) (*cart.Cart, error)
+	GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID sql.NullString) (*cart.Cart, error)
 	UpsertItem(ctx context.Context, tx *sql.Tx, item *cart.CartItem) error
 	GetCartItems(ctx context.Context, cartID string) ([]*CartItemDB, error)
 	UpdateItemQuantity(ctx context.Context, tx *sql.Tx, cartID string, cartItemID int64, quantity int) error
@@ -30,7 +30,7 @@ func NewCartRepository(db *sql.DB) CartRepository {
 	return &cartRepository{db: db}
 }
 
-func (r *cartRepository) GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID string) (*cart.Cart, error) {
+func (r *cartRepository) GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID sql.NullString) (*cart.Cart, error) {
 	var query string
 	var args []any
 	c := new(cart.Cart)
@@ -40,7 +40,7 @@ func (r *cartRepository) GetOrCreateActiveCart(ctx context.Context, userID sql.N
 		args = append(args, userID.Int64)
 	} else {
 		query = `SELECT cart_id, user_id, session_id, status FROM carts WHERE session_id = $1 AND status = 'guest' LIMIT 1`
-		args = append(args, sessionID)
+		args = append(args, sessionID.String)
 	}
 
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(
@@ -115,7 +115,7 @@ type CartItemDB struct {
 	Name  string
 	Price float64
 	Stock int
-	SKU   string
+	SKU   sql.NullString
 }
 
 func (r *cartRepository) GetCartItems(ctx context.Context, cartID string) ([]*CartItemDB, error) {

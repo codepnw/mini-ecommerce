@@ -1,6 +1,9 @@
 package cart
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type status string
 
@@ -12,12 +15,12 @@ const (
 )
 
 type Cart struct {
-	CartID    string    `json:"cart_id"`
-	UserID    int64     `json:"user_id"`
-	SessionID string    `json:"sesstion_id"`
-	Status    status    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CartID    string         `json:"cart_id"`
+	UserID    sql.NullInt64  `json:"user_id"`
+	SessionID sql.NullString `json:"sesstion_id"`
+	Status    status         `json:"status"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
 }
 
 type CartItem struct {

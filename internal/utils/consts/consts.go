@@ -12,4 +12,5 @@ const (
 // Params Key
 const (
 	ParamProductID = "product_id"
+	CartItemID     = "cart_item_id"
 )

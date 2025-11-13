@@ -3,6 +3,7 @@ package cartusecase
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"math"
 
 	"github.com/codepnw/mini-ecommerce/internal/cart"
@@ -42,7 +43,10 @@ func (u *cartUsecase) AddItemToCart(ctx context.Context, productID int64, quanti
 	// Check Product Stock
 	product, err := u.productRepo.FindByID(ctx, productID)
 	if err != nil {
-		return nil, errs.ErrProductNotFound
+		if errors.Is(err, errs.ErrProductNotFound) {
+			return nil, err
+		}
+		return nil, err
 	}
 	if product.Stock < quantity {
 		return nil, errs.ErrProductNotEnough
@@ -51,9 +55,10 @@ func (u *cartUsecase) AddItemToCart(ctx context.Context, productID int64, quanti
 	userID := helper.GetUserIDFromCtx(ctx)
 	sessionID := helper.GetSessionIDFromCtx(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
+	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 
 	// Get or Create Cart
-	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, sessionID)
+	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, nullSessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +117,10 @@ func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
 	userID := helper.GetUserIDFromCtx(ctx)
 	sessionID := helper.GetSessionIDFromCtx(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
+	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 
 	// Get or Create Cart
-	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, sessionID)
+	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, nullSessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +147,12 @@ func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
 			hasChanged = true
 		}
 
+		// Check SKU
+		var finalSKU string
+		if item.SKU.Valid {
+			finalSKU = item.SKU.String
+		}
+
 		viewItem := &CartItemView{
 			CartItemID:     item.CartItemID,
 			ProductID:      item.ProductID,
@@ -148,7 +160,7 @@ func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
 			Name:           item.Name,
 			Price:          item.Price,
 			Stock:          item.Stock,
-			SKU:            item.SKU,
+			SKU:            finalSKU,
 			PriceAtAdd:     item.PriceAtAdd,
 			IsPriceChanged: isPriceChanged,
 			IsOutOfStock:   isOutOfStock,
@@ -187,9 +199,10 @@ func (u *cartUsecase) UpdateItemQuantity(ctx context.Context, cartItemID int64, 
 	userID := helper.GetUserIDFromCtx(ctx)
 	sessionID := helper.GetSessionIDFromCtx(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
+	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 
 	// Get or Create Cart
-	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, sessionID)
+	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, nullSessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +216,10 @@ func (u *cartUsecase) UpdateItemQuantity(ctx context.Context, cartItemID int64, 
 
 		product, err := u.productRepo.FindByIDForUpdate(ctx, tx, item.ProductID)
 		if err != nil {
-			return errs.ErrProductNotFound
+			if errors.Is(err, errs.ErrProductNotFound) {
+				return err
+			}
+			return err
 		}
 		if product.Stock < newQuantity {
 			return errs.ErrProductNotEnough
@@ -226,8 +242,9 @@ func (u *cartUsecase) RemoveItemFromCart(ctx context.Context, cartItemID int64) 
 	userID := helper.GetUserIDFromCtx(ctx)
 	sessionID := helper.GetSessionIDFromCtx(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
+	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 
-	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, sessionID)
+	cartData, err := u.cartRepo.GetOrCreateActiveCart(ctx, nullUserID, nullSessionID)
 	if err != nil {
 		return nil, err
 	}

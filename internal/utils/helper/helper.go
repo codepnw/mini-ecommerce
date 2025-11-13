@@ -29,5 +29,5 @@ func GetUserIDFromCtx(ctx context.Context) int64 {
 }
 func GetSessionIDFromCtx(ctx context.Context) string {
 	// TODO: change later
-	return "mock_session_id"
+	return ""
 }
