@@ -1,0 +1,1 @@
+DROP INDEX idx_unique_product_in_cart;
