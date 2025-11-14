@@ -14,3 +14,12 @@ const (
 	ParamProductID = "product_id"
 	CartItemID     = "cart_item_id"
 )
+
+// Context Key
+type contextKey string
+
+const (
+	UserClaimsKey contextKey = "user-claims-key"
+	UserIDKey     contextKey = "user-id-key"
+	SessionIDKey  contextKey = "session-id-key"
+)

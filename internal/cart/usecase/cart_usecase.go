@@ -11,7 +11,7 @@ import (
 	productrepository "github.com/codepnw/mini-ecommerce/internal/product/repository"
 	"github.com/codepnw/mini-ecommerce/internal/utils/consts"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
-	"github.com/codepnw/mini-ecommerce/internal/utils/helper"
+	"github.com/codepnw/mini-ecommerce/pkg/auth"
 	"github.com/codepnw/mini-ecommerce/pkg/database"
 )
 
@@ -52,8 +52,8 @@ func (u *cartUsecase) AddItemToCart(ctx context.Context, productID int64, quanti
 		return nil, errs.ErrProductNotEnough
 	}
 
-	userID := helper.GetUserIDFromCtx(ctx)
-	sessionID := helper.GetSessionIDFromCtx(ctx)
+	userID := auth.GetUserID(ctx)
+	sessionID := auth.GetSessionID(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
 	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 
@@ -114,8 +114,8 @@ func (u *cartUsecase) GetCart(ctx context.Context) (*CartView, error) {
 }
 
 func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
-	userID := helper.GetUserIDFromCtx(ctx)
-	sessionID := helper.GetSessionIDFromCtx(ctx)
+	userID := auth.GetUserID(ctx)
+	sessionID := auth.GetSessionID(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
 	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 
@@ -196,8 +196,8 @@ func (u *cartUsecase) UpdateItemQuantity(ctx context.Context, cartItemID int64, 
 		return nil, errs.ErrInvalidQuantity
 	}
 
-	userID := helper.GetUserIDFromCtx(ctx)
-	sessionID := helper.GetSessionIDFromCtx(ctx)
+	userID := auth.GetUserID(ctx)
+	sessionID := auth.GetSessionID(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
 	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 
@@ -239,8 +239,8 @@ func (u *cartUsecase) RemoveItemFromCart(ctx context.Context, cartItemID int64) 
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
-	userID := helper.GetUserIDFromCtx(ctx)
-	sessionID := helper.GetSessionIDFromCtx(ctx)
+	userID := auth.GetUserID(ctx)
+	sessionID := auth.GetSessionID(ctx)
 	nullUserID := sql.NullInt64{Int64: userID, Valid: userID > 0}
 	nullSessionID := sql.NullString{String: sessionID, Valid: sessionID != ""}
 

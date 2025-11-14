@@ -29,7 +29,7 @@ func (h *cartHandler) AddItemToCart(c *gin.Context) {
 		return
 	}
 
-	result, err := h.uc.AddItemToCart(c, req.ProductID, req.Quantity)
+	result, err := h.uc.AddItemToCart(c.Request.Context(), req.ProductID, req.Quantity)
 	if err != nil {
 		switch err {
 		case errs.ErrProductNotEnough:
@@ -47,7 +47,7 @@ func (h *cartHandler) AddItemToCart(c *gin.Context) {
 }
 
 func (h *cartHandler) GetCart(c *gin.Context) {
-	result, err := h.uc.GetCart(c)
+	result, err := h.uc.GetCart(c.Request.Context())
 	if err != nil {
 		response.InternalServerError(c, err)
 		return
@@ -72,7 +72,7 @@ func (h *cartHandler) UpdateItemQuantity(c *gin.Context) {
 		return
 	}
 
-	result, err := h.uc.UpdateItemQuantity(c, id, req.NewQuantity)
+	result, err := h.uc.UpdateItemQuantity(c.Request.Context(), id, req.NewQuantity)
 	if err != nil {
 		switch err {
 		case errs.ErrInvalidQuantity:
@@ -102,7 +102,7 @@ func (h *cartHandler) RemoveItemFromCart(c *gin.Context) {
 		return
 	}
 
-	result, err := h.uc.RemoveItemFromCart(c, id)
+	result, err := h.uc.RemoveItemFromCart(c.Request.Context(), id)
 	if err != nil {
 		response.InternalServerError(c, err)
 		return

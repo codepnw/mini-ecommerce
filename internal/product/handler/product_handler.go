@@ -8,6 +8,7 @@ import (
 	"github.com/codepnw/mini-ecommerce/internal/utils/consts"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/utils/helper"
+	"github.com/codepnw/mini-ecommerce/pkg/auth"
 	"github.com/codepnw/mini-ecommerce/pkg/response"
 	"github.com/codepnw/mini-ecommerce/pkg/validate"
 	"github.com/gin-gonic/gin"
@@ -33,7 +34,7 @@ func (h *productHandler) Create(c *gin.Context) {
 	}
 
 	// Get User Context
-	userCtx, err := helper.GetCurrentUser(c)
+	userCtx, err := auth.GetCurrentUser(c)
 	if err != nil {
 		response.Unauthorized(c, err.Error())
 		return
@@ -104,7 +105,7 @@ func (h *productHandler) Update(c *gin.Context) {
 	}
 
 	// Get User Context
-	userCtx, err := helper.GetCurrentUser(c)
+	userCtx, err := auth.GetCurrentUser(c)
 	if err != nil {
 		response.Unauthorized(c, err.Error())
 		return
@@ -171,7 +172,7 @@ func (h *productHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	userCtx, err := helper.GetCurrentUser(c)
+	userCtx, err := auth.GetCurrentUser(c)
 	if err != nil {
 		response.Unauthorized(c, err.Error())
 		return

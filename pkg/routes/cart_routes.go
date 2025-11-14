@@ -16,8 +16,11 @@ func (cfg *routeConfig) CartRoutes() {
 	uc := cartusecase.NewCartUsecase(cartRepo, prodRepo, cfg.tx)
 	handler := carthandler.NewCartHandler(uc)
 
-	var cartItemID = fmt.Sprintf("/items/:%s", consts.CartItemID)
+	cartItemID := fmt.Sprintf("/items/:%s", consts.CartItemID)
 	cartRoutes := cfg.router.Group("/cart")
+
+	// Session or Authorized
+	cartRoutes.Use(cfg.auth.SessionMiddleware())
 	{
 		cartRoutes.POST("/", handler.AddItemToCart)
 		cartRoutes.GET("/", handler.GetCart)

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/codepnw/mini-ecommerce/internal/middleware"
 	"github.com/codepnw/mini-ecommerce/pkg/config"
 	"github.com/codepnw/mini-ecommerce/pkg/database"
 	"github.com/codepnw/mini-ecommerce/pkg/jwt"
@@ -15,6 +16,7 @@ type routeConfig struct {
 	db     *sql.DB
 	token  *jwt.JWTToken
 	tx     database.TxManager
+	auth   *middleware.AuthMiddleware
 }
 
 func RegisterRoutes(cfg *config.EnvConfig) error {
@@ -33,12 +35,18 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 
 	tx := database.InitTransaction(db)
 
+	auth, err := middleware.InitAuthMiddleware(token)
+	if err != nil {
+		return err
+	}
+
 	// Register Routes
 	routeCfg := &routeConfig{
 		router: router,
 		db:     db,
 		token:  token,
 		tx:     tx,
+		auth:   auth,
 	}
 
 	// User Routes
