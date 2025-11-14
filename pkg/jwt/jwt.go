@@ -60,3 +60,30 @@ func (t *JWTToken) generateToken(key string, u *user.User, duration time.Duratio
 	}
 	return ss, nil
 }
+
+func (t *JWTToken) VerifyAccessToken(tokenStr string) (*UserClaims, error) {
+	return t.verifyToken(t.secretKey, tokenStr)
+}
+
+func (t *JWTToken) VerifyRefreshToken(tokenStr string) (*UserClaims, error) {
+	return t.verifyToken(t.refreshKey, tokenStr)
+}
+
+func (t *JWTToken) verifyToken(key, tokenStr string) (*UserClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &UserClaims{}, func(t *jwt.Token) (any, error) {
+		return []byte(key), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*UserClaims)
+	if !token.Valid || !ok {
+		return nil, errors.New("invalid token")
+	}
+
+	if claims.ExpiresAt != nil && time.Now().After(claims.ExpiresAt.Time) {
+		return nil, errors.New("token is expired")
+	}
+	return claims, nil
+}
