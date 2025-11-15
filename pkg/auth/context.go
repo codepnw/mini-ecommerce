@@ -64,3 +64,7 @@ func GetSessionID(ctx context.Context) string {
 	}
 	return sessionID
 }
+
+func SetCurrentUser(ctx context.Context, claims *jwt.UserClaims) context.Context {
+	return context.WithValue(ctx, consts.UserClaimsKey, claims)
+}

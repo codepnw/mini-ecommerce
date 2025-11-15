@@ -55,9 +55,7 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 	}
 
 	// Product Routes
-	if err = routeCfg.ProductRoutes(); err != nil {
-		return err
-	}
+	routeCfg.ProductRoutes()
 
 	// Cart Routes
 	routeCfg.CartRoutes()

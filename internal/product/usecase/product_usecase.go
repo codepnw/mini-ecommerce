@@ -5,28 +5,27 @@ import (
 
 	"github.com/codepnw/mini-ecommerce/internal/product"
 	productrepository "github.com/codepnw/mini-ecommerce/internal/product/repository"
-	userusecase "github.com/codepnw/mini-ecommerce/internal/user/usecase"
+	"github.com/codepnw/mini-ecommerce/internal/user"
 	"github.com/codepnw/mini-ecommerce/internal/utils/consts"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
+	"github.com/codepnw/mini-ecommerce/pkg/auth"
 )
 
 type ProductUsecase interface {
 	Create(ctx context.Context, input *product.Product) (*product.Product, error)
 	GetByID(ctx context.Context, id int64) (*product.Product, error)
 	GetAll(ctx context.Context) ([]*product.Product, error)
-	Update(ctx context.Context, userID int64, input *product.Product) (*product.Product, error)
-	Delete(ctx context.Context, userID, productID int64) error
+	Update(ctx context.Context, input *product.Product) (*product.Product, error)
+	Delete(ctx context.Context, productID int64) error
 }
 
 type productUsecase struct {
-	repo   productrepository.ProductRepository
-	userUc userusecase.UserUsecase
+	repo productrepository.ProductRepository
 }
 
-func NewProductUsecase(repo productrepository.ProductRepository, userUc userusecase.UserUsecase) ProductUsecase {
+func NewProductUsecase(repo productrepository.ProductRepository) ProductUsecase {
 	return &productUsecase{
-		repo:   repo,
-		userUc: userUc,
+		repo: repo,
 	}
 }
 
@@ -81,21 +80,13 @@ func (u *productUsecase) GetAll(ctx context.Context) ([]*product.Product, error)
 	return resp, nil
 }
 
-func (u *productUsecase) Update(ctx context.Context, userID int64, input *product.Product) (*product.Product, error) {
+func (u *productUsecase) Update(ctx context.Context, input *product.Product) (*product.Product, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
-	// Check Product Owner
-	userResp, err := u.userUc.GetUser(ctx, userID)
-	if err != nil {
+	// Check Admin & Product Owner
+	if err := u.checkPermissions(ctx, input.ID); err != nil {
 		return nil, err
-	}
-	prodResp, err := u.repo.FindByID(ctx, input.ID)
-	if err != nil {
-		return nil, err
-	}
-	if userResp.ID != prodResp.OwnerID {
-		return nil, errs.ErrNoPermissions
 	}
 
 	// Update Product
@@ -106,28 +97,39 @@ func (u *productUsecase) Update(ctx context.Context, userID int64, input *produc
 	return resp, nil
 }
 
-func (u *productUsecase) Delete(ctx context.Context, userID, productID int64) error {
+func (u *productUsecase) Delete(ctx context.Context, productID int64) error {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
 	// TODO: check product in order
 
-	// Check Product Owner
-	userResp, err := u.userUc.GetUser(ctx, userID)
-	if err != nil {
+	// Check Admin & Product Owner
+	if err := u.checkPermissions(ctx, productID); err != nil {
 		return err
-	}
-	prodResp, err := u.repo.FindByID(ctx, productID)
-	if err != nil {
-		return err
-	}
-	if userResp.ID != prodResp.OwnerID {
-		return errs.ErrNoPermissions
 	}
 
 	// Delete Product
-	if err := u.repo.Delete(ctx, prodResp.ID); err != nil {
+	if err := u.repo.Delete(ctx, productID); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (u *productUsecase) checkPermissions(ctx context.Context, productID int64) error {
+	currentUser, err := auth.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+	productData, err := u.repo.FindByID(ctx, productID)
+	if err != nil {
+		return err
+	}
+
+	// Check Admin & Product Owner
+	if currentUser.Role != string(user.RoleAdmin) {
+		if currentUser.ID != productData.OwnerID {
+			return errs.ErrNoPermissions
+		}
 	}
 	return nil
 }

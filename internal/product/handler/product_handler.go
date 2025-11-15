@@ -34,7 +34,7 @@ func (h *productHandler) Create(c *gin.Context) {
 	}
 
 	// Get User Context
-	userCtx, err := auth.GetCurrentUser(c)
+	userCtx, err := auth.GetCurrentUser(c.Request.Context())
 	if err != nil {
 		response.Unauthorized(c, err.Error())
 		return
@@ -47,7 +47,7 @@ func (h *productHandler) Create(c *gin.Context) {
 		SKU:     req.SKU,
 		OwnerID: userCtx.ID,
 	}
-	resp, err := h.uc.Create(c, input)
+	resp, err := h.uc.Create(c.Request.Context(), input)
 	if err != nil {
 		switch err {
 		case errs.ErrProductPriceInvalid:
@@ -74,7 +74,7 @@ func (h *productHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.uc.GetByID(c, id)
+	resp, err := h.uc.GetByID(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, errs.ErrProductNotFound) {
 			response.NotFound(c, err.Error())
@@ -89,7 +89,7 @@ func (h *productHandler) GetByID(c *gin.Context) {
 func (h *productHandler) GetAll(c *gin.Context) {
 	// TODO: filter
 
-	resp, err := h.uc.GetAll(c)
+	resp, err := h.uc.GetAll(c.Request.Context())
 	if err != nil {
 		response.InternalServerError(c, err)
 		return
@@ -101,13 +101,6 @@ func (h *productHandler) Update(c *gin.Context) {
 	productID, err := h.getParamID(c)
 	if err != nil {
 		response.BadRequest(c, err.Error())
-		return
-	}
-
-	// Get User Context
-	userCtx, err := auth.GetCurrentUser(c)
-	if err != nil {
-		response.Unauthorized(c, err.Error())
 		return
 	}
 
@@ -148,7 +141,7 @@ func (h *productHandler) Update(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.uc.Update(c, userCtx.ID, input)
+	resp, err := h.uc.Update(c.Request.Context(), input)
 	if err != nil {
 		switch err {
 		case errs.ErrProductNotFound:
@@ -172,13 +165,7 @@ func (h *productHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	userCtx, err := auth.GetCurrentUser(c)
-	if err != nil {
-		response.Unauthorized(c, err.Error())
-		return
-	}
-
-	if err = h.uc.Delete(c, userCtx.ID, productID); err != nil {
+	if err = h.uc.Delete(c.Request.Context(), productID); err != nil {
 		switch err {
 		case errs.ErrProductNotFound:
 			response.NotFound(c, err.Error())

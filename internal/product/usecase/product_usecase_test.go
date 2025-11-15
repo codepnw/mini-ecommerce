@@ -8,9 +8,9 @@ import (
 	"github.com/codepnw/mini-ecommerce/internal/product"
 	productrepository "github.com/codepnw/mini-ecommerce/internal/product/repository"
 	productusecase "github.com/codepnw/mini-ecommerce/internal/product/usecase"
-	"github.com/codepnw/mini-ecommerce/internal/user"
-	userusecase "github.com/codepnw/mini-ecommerce/internal/user/usecase"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
+	"github.com/codepnw/mini-ecommerce/pkg/auth"
+	"github.com/codepnw/mini-ecommerce/pkg/jwt"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ func TestCreateUsecase(t *testing.T) {
 	type testCase struct {
 		name        string
 		input       *product.Product
-		mockFn      func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase)
+		mockFn      func(mockRepo *productrepository.MockProductRepository)
 		expectedErr error
 	}
 
@@ -33,7 +33,7 @@ func TestCreateUsecase(t *testing.T) {
 				OwnerID: 10,
 				SKU:     "apple-iphone-17",
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
+			mockFn: func(mockRepo *productrepository.MockProductRepository) {
 				mockProduct := &product.Product{
 					ID:   1,
 					Name: "IPhone 17",
@@ -48,7 +48,7 @@ func TestCreateUsecase(t *testing.T) {
 		{
 			name:  "fail sku aleady exists",
 			input: &product.Product{SKU: "apple-iphone-17"},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
+			mockFn: func(mockRepo *productrepository.MockProductRepository) {
 				mockRepo.EXPECT().SKUExists(gomock.Any(), "apple-iphone-17").Return(true, nil).Times(1)
 			},
 			expectedErr: errs.ErrProductSKUExists,
@@ -62,7 +62,7 @@ func TestCreateUsecase(t *testing.T) {
 				OwnerID: 10,
 				SKU:     "apple-iphone-17",
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
+			mockFn: func(mockRepo *productrepository.MockProductRepository) {
 				mockRepo.EXPECT().SKUExists(gomock.Any(), "apple-iphone-17").Return(false, nil).Times(1)
 
 				mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil, errors.New("db error")).Times(1)
@@ -78,14 +78,9 @@ func TestCreateUsecase(t *testing.T) {
 
 			// Dependencies
 			mockRepo := productrepository.NewMockProductRepository(ctrl)
-			mockUserUc := userusecase.NewMockUserUsecase(ctrl)
+			uc := productusecase.NewProductUsecase(mockRepo)
 
-			uc := productusecase.NewProductUsecase(mockRepo, mockUserUc)
-			if uc == nil {
-				t.Fatalf("usecase is nil")
-			}
-
-			tc.mockFn(mockRepo, mockUserUc)
+			tc.mockFn(mockRepo)
 
 			result, err := uc.Create(context.Background(), tc.input)
 
@@ -152,11 +147,7 @@ func TestGetProduct(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		mockUserUC := userusecase.NewMockUserUsecase(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo, mockUserUC)
-		if uc == nil {
-			t.Fatalf("product usecase is nil")
-		}
+		uc := productusecase.NewProductUsecase(mockRepo)
 
 		tc.mockFn(mockRepo)
 
@@ -212,11 +203,7 @@ func TestGetProducts(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		mockUserUC := userusecase.NewMockUserUsecase(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo, mockUserUC)
-		if uc == nil {
-			t.Fatalf("product usecase is nil")
-		}
+		uc := productusecase.NewProductUsecase(mockRepo)
 
 		tc.mockFn(mockRepo)
 
@@ -237,7 +224,7 @@ func TestUpdateProduct(t *testing.T) {
 	type testCase struct {
 		name        string
 		input       *product.Product
-		mockFn      func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase, input *product.Product)
+		mockFn      func(mockRepo *productrepository.MockProductRepository, input *product.Product)
 		expectedErr error
 	}
 
@@ -249,12 +236,7 @@ func TestUpdateProduct(t *testing.T) {
 				OwnerID: 10,
 				Stock:   20,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase, input *product.Product) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
 				mockProduct := &product.Product{
 					ID:      1,
 					OwnerID: 10,
@@ -266,28 +248,12 @@ func TestUpdateProduct(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name: "fail user not found",
-			input: &product.Product{
-				ID:      1,
-				OwnerID: 10,
-			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase, input *product.Product) {
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(nil, errs.ErrUserNotFound).Times(1)
-			},
-			expectedErr: errs.ErrUserNotFound,
-		},
-		{
 			name: "fail product not found",
 			input: &product.Product{
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase, input *product.Product) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
 				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(nil, errs.ErrProductNotFound).Times(1)
 			},
 			expectedErr: errs.ErrProductNotFound,
@@ -299,12 +265,7 @@ func TestUpdateProduct(t *testing.T) {
 				OwnerID: 11,
 				Stock:   20,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase, input *product.Product) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
 				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(input, nil).Times(1)
 			},
 			expectedErr: errs.ErrNoPermissions,
@@ -315,12 +276,7 @@ func TestUpdateProduct(t *testing.T) {
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase, input *product.Product) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
 				mockProduct := &product.Product{
 					ID:      1,
 					OwnerID: 10,
@@ -337,13 +293,15 @@ func TestUpdateProduct(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
+		mockUser := &jwt.UserClaims{ID: 10, Role: "seller"}
+		ctx := auth.SetCurrentUser(context.Background(), mockUser)
+
 		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		mockUserUC := userusecase.NewMockUserUsecase(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo, mockUserUC)
+		uc := productusecase.NewProductUsecase(mockRepo)
 
-		tc.mockFn(mockRepo, mockUserUC, tc.input)
+		tc.mockFn(mockRepo, tc.input)
 
-		result, err := uc.Update(context.Background(), int64(10), tc.input)
+		result, err := uc.Update(ctx, tc.input)
 
 		if tc.expectedErr != nil {
 			assert.Error(t, err)
@@ -360,7 +318,7 @@ func TestDeleteProduct(t *testing.T) {
 	type testCase struct {
 		name        string
 		input       *product.Product
-		mockFn      func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase)
+		mockFn      func(mockRepo *productrepository.MockProductRepository)
 		expectedErr error
 	}
 
@@ -371,12 +329,7 @@ func TestDeleteProduct(t *testing.T) {
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository) {
 				mockProduct := &product.Product{
 					ID:      1,
 					OwnerID: 10,
@@ -388,28 +341,12 @@ func TestDeleteProduct(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name: "fail user not found",
-			input: &product.Product{
-				ID:      1,
-				OwnerID: 10,
-			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(nil, errs.ErrUserNotFound).Times(1)
-			},
-			expectedErr: errs.ErrUserNotFound,
-		},
-		{
 			name: "fail product not found",
 			input: &product.Product{
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository) {
 				mockProduct := &product.Product{
 					ID:      1,
 					OwnerID: 10,
@@ -426,12 +363,7 @@ func TestDeleteProduct(t *testing.T) {
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository) {
 				mockProduct := &product.Product{
 					ID:      1,
 					OwnerID: 11,
@@ -446,12 +378,7 @@ func TestDeleteProduct(t *testing.T) {
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository, mockUserUc *userusecase.MockUserUsecase) {
-				mockUser := &user.User{
-					ID: 10,
-				}
-				mockUserUc.EXPECT().GetUser(gomock.Any(), int64(10)).Return(mockUser, nil).Times(1)
-
+			mockFn: func(mockRepo *productrepository.MockProductRepository) {
 				mockProduct := &product.Product{
 					ID:      1,
 					OwnerID: 10,
@@ -468,13 +395,15 @@ func TestDeleteProduct(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
+		mockUser := &jwt.UserClaims{ID: 10, Role: "seller"}
+		ctx := auth.SetCurrentUser(context.Background(), mockUser)
+
 		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		mockUserUC := userusecase.NewMockUserUsecase(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo, mockUserUC)
+		uc := productusecase.NewProductUsecase(mockRepo)
 
-		tc.mockFn(mockRepo, mockUserUC)
+		tc.mockFn(mockRepo)
 
-		err := uc.Delete(context.Background(), tc.input.OwnerID, tc.input.ID)
+		err := uc.Delete(ctx, tc.input.ID)
 
 		if tc.expectedErr != nil {
 			assert.Error(t, err)

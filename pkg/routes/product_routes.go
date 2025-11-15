@@ -7,25 +7,12 @@ import (
 	productrepository "github.com/codepnw/mini-ecommerce/internal/product/repository"
 	productusecase "github.com/codepnw/mini-ecommerce/internal/product/usecase"
 	"github.com/codepnw/mini-ecommerce/internal/user"
-	userrepository "github.com/codepnw/mini-ecommerce/internal/user/repository"
-	userusecase "github.com/codepnw/mini-ecommerce/internal/user/usecase"
 	"github.com/codepnw/mini-ecommerce/internal/utils/consts"
 )
 
-func (cfg *routeConfig) ProductRoutes() error {
-	userRepo := userrepository.NewUserRepository(cfg.db)
-	userUc, err := userusecase.NewUserUsecase(&userusecase.UserUsecaseConfig{
-		Repo:  userRepo,
-		Token: cfg.token,
-		Tx:    cfg.tx,
-		DB:    cfg.db,
-	})
-	if err != nil {
-		return err
-	}
-
+func (cfg *routeConfig) ProductRoutes() {
 	repo := productrepository.NewProductRepository(cfg.db)
-	uc := productusecase.NewProductUsecase(repo, userUc)
+	uc := productusecase.NewProductUsecase(repo)
 	handler := producthandler.NewProductHandler(uc)
 
 	paramID := fmt.Sprintf("/:%s", consts.ParamProductID)
@@ -44,6 +31,4 @@ func (cfg *routeConfig) ProductRoutes() error {
 		private.PATCH(paramID, handler.Update)
 		private.DELETE(paramID, handler.Delete)
 	}
-
-	return nil
 }
