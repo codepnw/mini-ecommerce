@@ -12,6 +12,7 @@ type userModel struct {
 	Password  string    `db:"password"`
 	FirstName string    `db:"first_name"`
 	LastName  string    `db:"last_name"`
+	Role      string    `db:"role"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
@@ -23,6 +24,7 @@ func (r *userRepository) modelToDomain(m *userModel) *user.User {
 		Password:  m.Password,
 		FirstName: m.FirstName,
 		LastName:  m.LastName,
+		Role:      m.Role,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
 	}
@@ -35,6 +37,7 @@ func (r *userRepository) domainToModel(m *user.User) *userModel {
 		Password:  m.Password,
 		FirstName: m.FirstName,
 		LastName:  m.LastName,
+		Role:      m.Role,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
 	}

@@ -57,7 +57,7 @@ func (r *userRepository) Insert(ctx context.Context, db database.DBExec, input *
 func (r *userRepository) FindByID(ctx context.Context, id int64) (*user.User, error) {
 	u := new(user.User)
 	query := `
-		SELECT id, email, first_name, last_name, created_at, updated_at
+		SELECT id, email, first_name, last_name, role, created_at, updated_at
 		FROM users WHERE id = $1
 	`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
@@ -65,6 +65,7 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*user.User, er
 		&u.Email,
 		&u.FirstName,
 		&u.LastName,
+		&u.Role,
 		&u.CreatedAt,
 		&u.UpdatedAt,
 	)
@@ -79,9 +80,9 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*user.User, er
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*user.User, error) {
 	u := new(user.User)
-	query := `SELECT id, email, password FROM users WHERE email = $1`
+	query := `SELECT id, email, password, role FROM users WHERE email = $1`
 
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&u.ID, &u.Email, &u.Password)
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&u.ID, &u.Email, &u.Password, &u.Role)
 	if err != nil {
 		return nil, err
 	}

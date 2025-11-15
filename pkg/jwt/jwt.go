@@ -45,7 +45,7 @@ func (t *JWTToken) generateToken(key string, u *user.User, duration time.Duratio
 	claims := &UserClaims{
 		ID:    u.ID,
 		Email: u.Email,
-		Role:  "user", // TODO: change later
+		Role:  u.Role,
 		RegisteredClaims: &jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

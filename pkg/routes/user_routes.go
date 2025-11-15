@@ -23,10 +23,12 @@ func (cfg *routeConfig) UserRoutes() error {
 
 	auth := cfg.router.Group("/auth")
 	{
+		// Public
 		auth.POST("/register", handler.Register)
 		auth.POST("/login", handler.Login)
-		auth.POST("/refresh-token", handler.RefreshToken)
-		auth.POST("/logout", handler.Logout)
+		// Private
+		auth.POST("/refresh-token", cfg.auth.AuthorizedMiddleware(), handler.RefreshToken)
+		auth.POST("/logout", cfg.auth.AuthorizedMiddleware(), handler.Logout)
 	}
 
 	return nil

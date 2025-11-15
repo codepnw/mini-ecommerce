@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/codepnw/mini-ecommerce/internal/user"
 	"github.com/codepnw/mini-ecommerce/internal/utils/consts"
 	"github.com/codepnw/mini-ecommerce/pkg/auth"
 	"github.com/codepnw/mini-ecommerce/pkg/jwt"
@@ -78,5 +79,23 @@ func (a *AuthMiddleware) SessionMiddleware() gin.HandlerFunc {
 
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
+	}
+}
+
+func (a *AuthMiddleware) RolesRequired(roles ...user.RoleType) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userCtx, err := auth.GetCurrentUser(c.Request.Context())
+		if err != nil {
+			response.Unauthorized(c, err.Error())
+			return
+		}
+
+		for _, role := range roles {
+			if userCtx.Role == string(role) {
+				c.Next()
+				return
+			}
+		}
+		response.Forbidden(c, "no permissions")
 	}
 }

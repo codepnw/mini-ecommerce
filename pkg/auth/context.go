@@ -44,7 +44,7 @@ func GetCurrentUser(ctx context.Context) (*user.User, error) {
 	usr := &user.User{
 		ID:    claims.ID,
 		Email: claims.Email,
-		// TODO: Role
+		Role:  claims.Role,
 	}
 	return usr, nil
 }
