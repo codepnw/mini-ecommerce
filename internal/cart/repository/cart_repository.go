@@ -7,6 +7,7 @@ import (
 
 	"github.com/codepnw/mini-ecommerce/internal/cart"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
+	"github.com/codepnw/mini-ecommerce/pkg/database"
 )
 
 //go:generate mockgen -source=cart_repository.go -destination=mock_cart_repository.go -package=cartrepository
@@ -14,12 +15,13 @@ import (
 type CartRepository interface {
 	GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID sql.NullString) (*cart.Cart, error)
 	UpsertItem(ctx context.Context, tx *sql.Tx, item *cart.CartItem) error
-	GetCartItems(ctx context.Context, cartID string) ([]*CartItemDB, error)
+	GetCartItems(ctx context.Context, exec database.DBExec, cartID string) ([]*CartItemDB, error)
 	UpdateItemQuantity(ctx context.Context, tx *sql.Tx, cartID string, cartItemID int64, quantity int) error
 	RemoveItem(ctx context.Context, tx *sql.Tx, cartID string, cartItemID int64) error
-	ClearCart(ctx context.Context, cartID string) error
+	ClearCart(ctx context.Context, exec database.DBExec, cartID string) error
 	GetCartItemDetails(ctx context.Context, cartItemID int64, cartID string) (*cart.CartItem, error)
 	GetCartItemForUpdate(ctx context.Context, tx *sql.Tx, cartItemID int64, cartID string) (*cart.CartItem, error)
+	GetActiveCartByUserID(ctx context.Context, tx *sql.Tx, userID int64) (*cart.Cart, error)
 }
 
 type cartRepository struct {
@@ -118,7 +120,7 @@ type CartItemDB struct {
 	SKU   sql.NullString
 }
 
-func (r *cartRepository) GetCartItems(ctx context.Context, cartID string) ([]*CartItemDB, error) {
+func (r *cartRepository) GetCartItems(ctx context.Context, exec database.DBExec, cartID string) ([]*CartItemDB, error) {
 	query := `
 		SELECT ci.id, ci.product_id, ci.quantity, ci.price_at_add, p.name, p.price, p.stock, p.sku
 		FROM cart_items ci
@@ -126,7 +128,7 @@ func (r *cartRepository) GetCartItems(ctx context.Context, cartID string) ([]*Ca
 		WHERE ci.cart_id = $1
 		ORDER BY ci.created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, cartID)
+	rows, err := exec.QueryContext(ctx, query, cartID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,8 +180,8 @@ func (r *cartRepository) RemoveItem(ctx context.Context, tx *sql.Tx, cartID stri
 	return nil
 }
 
-func (r *cartRepository) ClearCart(ctx context.Context, cartID string) error {
-	_, err := r.db.ExecContext(ctx, "DELETE FROM cart_items WHERE cart_id = $1", cartID)
+func (r *cartRepository) ClearCart(ctx context.Context, exec database.DBExec, cartID string) error {
+	_, err := exec.ExecContext(ctx, "DELETE FROM cart_items WHERE cart_id = $1", cartID)
 	if err != nil {
 		return err
 	}
@@ -229,4 +231,22 @@ func (r *cartRepository) GetCartItemForUpdate(ctx context.Context, tx *sql.Tx, c
 		return nil, err
 	}
 	return item, nil
+}
+
+func (r *cartRepository) GetActiveCartByUserID(ctx context.Context, tx *sql.Tx, userID int64) (*cart.Cart, error) {
+	query := `
+		SELECT cart_id, user_id, session_id, status
+		FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1
+	`
+	c := new(cart.Cart)
+	err := tx.QueryRowContext(ctx, query, userID).Scan(
+		&c.CartID,
+		&c.UserID,
+		&c.SessionID,
+		&c.Status,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
 }

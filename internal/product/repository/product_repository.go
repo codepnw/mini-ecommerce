@@ -23,6 +23,7 @@ type ProductRepository interface {
 	Delete(ctx context.Context, id int64) error
 
 	SKUExists(ctx context.Context, sku string) (bool, error)
+	DecreaseStock(ctx context.Context, tx *sql.Tx, productID int64, qtyDecrease int) error
 }
 
 type productRepository struct {
@@ -231,4 +232,25 @@ func (r *productRepository) SKUExists(ctx context.Context, sku string) (bool, er
 		return false, err
 	}
 	return true, nil
+}
+
+func (r *productRepository) DecreaseStock(ctx context.Context, tx *sql.Tx, productID int64, qtyDecrease int) error {
+	query := `
+		UPDATE products
+		SET stock = stock - $1, updated_at = NOW()
+		WHERE id = $2
+	`
+	res, err := tx.ExecContext(ctx, query, qtyDecrease, productID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errs.ErrProductNotFound
+	}
+	return nil
 }

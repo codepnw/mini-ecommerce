@@ -26,13 +26,15 @@ type cartUsecase struct {
 	cartRepo    cartrepository.CartRepository
 	productRepo productrepository.ProductRepository
 	tx          database.TxManager
+	db          database.DBExec
 }
 
-func NewCartUsecase(cartRepo cartrepository.CartRepository, productRepo productrepository.ProductRepository, tx database.TxManager) CartUsecase {
+func NewCartUsecase(cartRepo cartrepository.CartRepository, productRepo productrepository.ProductRepository, tx database.TxManager, db database.DBExec) CartUsecase {
 	return &cartUsecase{
 		cartRepo:    cartRepo,
 		productRepo: productRepo,
 		tx:          tx,
+		db:          db,
 	}
 }
 
@@ -126,7 +128,7 @@ func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
 	}
 
 	// Get Items
-	items, err := u.cartRepo.GetCartItems(ctx, cartData.CartID)
+	items, err := u.cartRepo.GetCartItems(ctx, u.db, cartData.CartID)
 	if err != nil {
 		return nil, err
 	}

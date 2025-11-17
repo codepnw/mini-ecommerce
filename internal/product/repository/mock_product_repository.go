@@ -36,6 +36,20 @@ func (m *MockProductRepository) EXPECT() *MockProductRepositoryMockRecorder {
 	return m.recorder
 }
 
+// DecreaseStock mocks base method.
+func (m *MockProductRepository) DecreaseStock(ctx context.Context, tx *sql.Tx, productID int64, qtyDecrease int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecreaseStock", ctx, tx, productID, qtyDecrease)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DecreaseStock indicates an expected call of DecreaseStock.
+func (mr *MockProductRepositoryMockRecorder) DecreaseStock(ctx, tx, productID, qtyDecrease interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecreaseStock", reflect.TypeOf((*MockProductRepository)(nil).DecreaseStock), ctx, tx, productID, qtyDecrease)
+}
+
 // Delete mocks base method.
 func (m *MockProductRepository) Delete(ctx context.Context, id int64) error {
 	m.ctrl.T.Helper()

@@ -13,7 +13,7 @@ import (
 func (cfg *routeConfig) CartRoutes() {
 	prodRepo := productrepository.NewProductRepository(cfg.db)
 	cartRepo := cartrepository.NewCartRepository(cfg.db)
-	uc := cartusecase.NewCartUsecase(cartRepo, prodRepo, cfg.tx)
+	uc := cartusecase.NewCartUsecase(cartRepo, prodRepo, cfg.tx, cfg.db)
 	handler := carthandler.NewCartHandler(uc)
 
 	cartItemID := fmt.Sprintf("/items/:%s", consts.CartItemID)

@@ -30,4 +30,5 @@ var (
 var (
 	ErrInvalidQuantity = errors.New("invalid quantity")
 	ErrItemNotInCart   = errors.New("item not in cart")
+	ErrCartIsEmpty     = errors.New("cart is empty")
 )

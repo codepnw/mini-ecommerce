@@ -22,6 +22,18 @@ func (m *mockTxManager) WithTransaction(ctx context.Context, fn func(tx *sql.Tx)
 	return fn(nil)
 }
 
+type mockDB struct{}
+
+func (m *mockDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	return nil
+}
+func (m *mockDB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return nil, nil
+}
+func (m *mockDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	return nil, nil
+}
+
 func TestAddItemToCart(t *testing.T) {
 	type testCase struct {
 		name        string
@@ -57,7 +69,7 @@ func TestAddItemToCart(t *testing.T) {
 					{CartItemID: "uuid-cart-item-002"},
 					{CartItemID: "uuid-cart-item-003"},
 				}
-				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), "uuid-001").Return(mockItems, nil).Times(1)
+				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), "uuid-001").Return(mockItems, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -108,8 +120,9 @@ func TestAddItemToCart(t *testing.T) {
 			mockCartRepo := cartrepository.NewMockCartRepository(ctrl)
 			mockProdRepo := productrepository.NewMockProductRepository(ctrl)
 			mockTx := &mockTxManager{}
+			mockDB := &mockDB{}
 
-			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx)
+			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx, mockDB)
 
 			tc.mockFn(mockCartRepo, mockProdRepo, mockTx)
 
@@ -159,7 +172,7 @@ func TestUpdateItemQuantity(t *testing.T) {
 					{CartItemID: "uuid-cart-item-002"},
 					{CartItemID: "uuid-cart-item-003"},
 				}
-				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
+				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -225,8 +238,9 @@ func TestUpdateItemQuantity(t *testing.T) {
 			mockCartRepo := cartrepository.NewMockCartRepository(ctrl)
 			mockProdRepo := productrepository.NewMockProductRepository(ctrl)
 			mockTx := &mockTxManager{}
+			mockDB := &mockDB{}
 
-			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx)
+			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx, mockDB)
 
 			tc.mockFn(mockCartRepo, mockProdRepo, mockTx)
 
@@ -268,7 +282,7 @@ func TestRemoveItemFromCart(t *testing.T) {
 					{CartItemID: "uuid-cart-item-002"},
 					{CartItemID: "uuid-cart-item-003"},
 				}
-				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
+				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -293,8 +307,9 @@ func TestRemoveItemFromCart(t *testing.T) {
 			mockCartRepo := cartrepository.NewMockCartRepository(ctrl)
 			mockProdRepo := productrepository.NewMockProductRepository(ctrl)
 			mockTx := &mockTxManager{}
+			mockDB := &mockDB{}
 
-			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx)
+			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx, mockDB)
 
 			tc.mockFn(mockCartRepo, mockProdRepo, mockTx)
 

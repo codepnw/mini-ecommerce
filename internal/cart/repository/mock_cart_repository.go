@@ -10,6 +10,7 @@ import (
 	reflect "reflect"
 
 	cart "github.com/codepnw/mini-ecommerce/internal/cart"
+	database "github.com/codepnw/mini-ecommerce/pkg/database"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -37,17 +38,32 @@ func (m *MockCartRepository) EXPECT() *MockCartRepositoryMockRecorder {
 }
 
 // ClearCart mocks base method.
-func (m *MockCartRepository) ClearCart(ctx context.Context, cartID string) error {
+func (m *MockCartRepository) ClearCart(ctx context.Context, exec database.DBExec, cartID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearCart", ctx, cartID)
+	ret := m.ctrl.Call(m, "ClearCart", ctx, exec, cartID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ClearCart indicates an expected call of ClearCart.
-func (mr *MockCartRepositoryMockRecorder) ClearCart(ctx, cartID interface{}) *gomock.Call {
+func (mr *MockCartRepositoryMockRecorder) ClearCart(ctx, exec, cartID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearCart", reflect.TypeOf((*MockCartRepository)(nil).ClearCart), ctx, cartID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearCart", reflect.TypeOf((*MockCartRepository)(nil).ClearCart), ctx, exec, cartID)
+}
+
+// GetActiveCartByUserID mocks base method.
+func (m *MockCartRepository) GetActiveCartByUserID(ctx context.Context, tx *sql.Tx, userID int64) (*cart.Cart, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveCartByUserID", ctx, tx, userID)
+	ret0, _ := ret[0].(*cart.Cart)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActiveCartByUserID indicates an expected call of GetActiveCartByUserID.
+func (mr *MockCartRepositoryMockRecorder) GetActiveCartByUserID(ctx, tx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveCartByUserID", reflect.TypeOf((*MockCartRepository)(nil).GetActiveCartByUserID), ctx, tx, userID)
 }
 
 // GetCartItemDetails mocks base method.
@@ -81,18 +97,18 @@ func (mr *MockCartRepositoryMockRecorder) GetCartItemForUpdate(ctx, tx, cartItem
 }
 
 // GetCartItems mocks base method.
-func (m *MockCartRepository) GetCartItems(ctx context.Context, cartID string) ([]*CartItemDB, error) {
+func (m *MockCartRepository) GetCartItems(ctx context.Context, exec database.DBExec, cartID string) ([]*CartItemDB, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCartItems", ctx, cartID)
+	ret := m.ctrl.Call(m, "GetCartItems", ctx, exec, cartID)
 	ret0, _ := ret[0].([]*CartItemDB)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCartItems indicates an expected call of GetCartItems.
-func (mr *MockCartRepositoryMockRecorder) GetCartItems(ctx, cartID interface{}) *gomock.Call {
+func (mr *MockCartRepositoryMockRecorder) GetCartItems(ctx, exec, cartID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCartItems", reflect.TypeOf((*MockCartRepository)(nil).GetCartItems), ctx, cartID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCartItems", reflect.TypeOf((*MockCartRepository)(nil).GetCartItems), ctx, exec, cartID)
 }
 
 // GetOrCreateActiveCart mocks base method.
