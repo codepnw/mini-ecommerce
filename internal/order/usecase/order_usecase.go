@@ -16,6 +16,7 @@ import (
 
 type OrderUsecase interface {
 	CreateOrder(ctx context.Context) (*order.Order, error)
+	GetOrderDetail(ctx context.Context, orderID int64) (*OrderView, error)
 }
 
 type orderUsecase struct {
@@ -120,9 +121,51 @@ func (u *orderUsecase) CreateOrder(ctx context.Context) (*order.Order, error) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
 	return newOrder, nil
+}
+
+func (u *orderUsecase) GetOrderDetail(ctx context.Context, orderID int64) (*OrderView, error) {
+	// Get UserID
+	userID := auth.GetUserID(ctx)
+	if userID == 0 {
+		return nil, errs.ErrUnauthorized
+	}
+
+	// Get Order
+	orderData, err := u.orderRepo.GetOrder(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+	if orderData.UserID != userID {
+		return nil, errs.ErrNoPermissions
+	}
+
+	// Get Items
+	itemsData, err := u.orderRepo.GetOrderItems(ctx, orderData.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map Struct -> View
+	itemViews := make([]*OrderItemView, 0)
+	for _, i := range itemsData {
+		itemViews = append(itemViews, &OrderItemView{
+			ProductID:       i.ProductID,
+			ProductName:     i.ProductName,
+			PriceAtPurchase: i.PriceAtPurchase,
+			Quantity:        i.Quantity,
+			Total:           i.PriceAtPurchase * float64(i.Quantity),
+		})
+	}
+
+	return &OrderView{
+		ID:        orderData.ID,
+		Status:    orderData.Status,
+		Total:     orderData.Total,
+		CreatedAt: orderData.CreatedAt.GoString(),
+		Items:     itemViews,
+	}, nil
 }

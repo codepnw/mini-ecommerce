@@ -3,8 +3,10 @@ package orderrepository
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/codepnw/mini-ecommerce/internal/order"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 )
 
 //go:generate mockgen -source=order_repository.go -destination=mock_order_repository.go -package=orderrepository
@@ -12,6 +14,8 @@ import (
 type OrderRepository interface {
 	CreateOrder(ctx context.Context, tx *sql.Tx, input *order.Order) (int64, error)
 	CreateOrderItem(ctx context.Context, tx *sql.Tx, input *order.OrderItem) error
+	GetOrder(ctx context.Context, orderID int64) (*order.Order, error)
+	GetOrderItems(ctx context.Context, orderID int64) ([]*OrderItemDetail, error)
 }
 
 type orderRepository struct {
@@ -53,6 +57,75 @@ func (r *orderRepository) CreateOrderItem(ctx context.Context, tx *sql.Tx, input
 		input.ProductID,
 		input.PriceAtPurchase,
 		input.Quantity,
- 	)
+	)
 	return err
+}
+
+func (r *orderRepository) GetOrder(ctx context.Context, orderID int64) (*order.Order, error) {
+	query := `
+		SELECT id, user_id, total, status, created_at, updated_at
+		FROM orders WHERE id = $1 LIMIT 1
+	`
+	o := new(order.Order)
+	err := r.db.QueryRowContext(ctx, query, orderID).Scan(
+		&o.ID,
+		&o.UserID,
+		&o.Total,
+		&o.Status,
+		&o.CreatedAt,
+		&o.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrOrderNotFound
+		}
+		return nil, err
+	}
+	return o, nil
+}
+
+
+type OrderItemDetail struct {
+	ID              int64   `json:"id"`
+	Quantity        int     `json:"quantity"`
+	PriceAtPurchase float64 `json:"price"`
+	ProductID       int64   `json:"product_id"`
+	ProductName     string  `json:"product_name"`
+	ProductSKU      string  `json:"product_sku"`
+}
+
+func (r *orderRepository) GetOrderItems(ctx context.Context, orderID int64) ([]*OrderItemDetail, error) {
+	query := `
+		SELECT oi.id, oi.product_id, oi.quantity, oi.price, p.name, p.sku
+		FROM order_items oi
+		INNER JOIN products p ON oi.product_id = p.id
+		WHERE oi.order_id = $1
+	`
+	rows, err := r.db.QueryContext(ctx, query, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]*OrderItemDetail, 0)
+	for rows.Next() {
+		i := new(OrderItemDetail)
+		err = rows.Scan(
+			&i.ID,
+			&i.ProductID,
+			&i.Quantity,
+			&i.PriceAtPurchase,
+			&i.ProductName,
+			&i.ProductSKU,
+		)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

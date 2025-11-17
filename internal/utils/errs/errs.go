@@ -32,3 +32,8 @@ var (
 	ErrItemNotInCart   = errors.New("item not in cart")
 	ErrCartIsEmpty     = errors.New("cart is empty")
 )
+
+// Order
+var (
+	ErrOrderNotFound = errors.New("order not found")
+)
