@@ -10,6 +10,7 @@ import (
 	reflect "reflect"
 
 	order "github.com/codepnw/mini-ecommerce/internal/order"
+	database "github.com/codepnw/mini-ecommerce/pkg/database"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -96,16 +97,30 @@ func (mr *MockOrderRepositoryMockRecorder) GetOrder(ctx, orderID interface{}) *g
 }
 
 // GetOrderItems mocks base method.
-func (m *MockOrderRepository) GetOrderItems(ctx context.Context, orderID int64) ([]*OrderItemDetail, error) {
+func (m *MockOrderRepository) GetOrderItems(ctx context.Context, exec database.DBExec, orderID int64) ([]*OrderItemDetail, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderItems", ctx, orderID)
+	ret := m.ctrl.Call(m, "GetOrderItems", ctx, exec, orderID)
 	ret0, _ := ret[0].([]*OrderItemDetail)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrderItems indicates an expected call of GetOrderItems.
-func (mr *MockOrderRepositoryMockRecorder) GetOrderItems(ctx, orderID interface{}) *gomock.Call {
+func (mr *MockOrderRepositoryMockRecorder) GetOrderItems(ctx, exec, orderID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderItems", reflect.TypeOf((*MockOrderRepository)(nil).GetOrderItems), ctx, orderID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderItems", reflect.TypeOf((*MockOrderRepository)(nil).GetOrderItems), ctx, exec, orderID)
+}
+
+// UpdateStatus mocks base method.
+func (m *MockOrderRepository) UpdateStatus(ctx context.Context, tx *sql.Tx, orderID int64, status string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatus", ctx, tx, orderID, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatus indicates an expected call of UpdateStatus.
+func (mr *MockOrderRepositoryMockRecorder) UpdateStatus(ctx, tx, orderID, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockOrderRepository)(nil).UpdateStatus), ctx, tx, orderID, status)
 }

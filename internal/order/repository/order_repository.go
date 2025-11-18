@@ -7,6 +7,7 @@ import (
 
 	"github.com/codepnw/mini-ecommerce/internal/order"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
+	"github.com/codepnw/mini-ecommerce/pkg/database"
 )
 
 //go:generate mockgen -source=order_repository.go -destination=mock_order_repository.go -package=orderrepository
@@ -15,8 +16,9 @@ type OrderRepository interface {
 	CreateOrder(ctx context.Context, tx *sql.Tx, input *order.Order) (int64, error)
 	CreateOrderItem(ctx context.Context, tx *sql.Tx, input *order.OrderItem) error
 	GetOrder(ctx context.Context, orderID int64) (*order.Order, error)
-	GetOrderItems(ctx context.Context, orderID int64) ([]*OrderItemDetail, error)
+	GetOrderItems(ctx context.Context, exec database.DBExec, orderID int64) ([]*OrderItemDetail, error)
 	GetMyOrders(ctx context.Context, userID int64) ([]*order.Order, error)
+	UpdateStatus(ctx context.Context, tx *sql.Tx, orderID int64, status string) error
 }
 
 type orderRepository struct {
@@ -94,14 +96,14 @@ type OrderItemDetail struct {
 	ProductSKU      string  `json:"product_sku"`
 }
 
-func (r *orderRepository) GetOrderItems(ctx context.Context, orderID int64) ([]*OrderItemDetail, error) {
+func (r *orderRepository) GetOrderItems(ctx context.Context, exec database.DBExec, orderID int64) ([]*OrderItemDetail, error) {
 	query := `
 		SELECT oi.id, oi.product_id, oi.quantity, oi.price, p.name, p.sku
 		FROM order_items oi
 		INNER JOIN products p ON oi.product_id = p.id
 		WHERE oi.order_id = $1
 	`
-	rows, err := r.db.QueryContext(ctx, query, orderID)
+	rows, err := exec.QueryContext(ctx, query, orderID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,4 +164,15 @@ func (r *orderRepository) GetMyOrders(ctx context.Context, userID int64) ([]*ord
 		return nil, err
 	}
 	return orders, nil
+}
+
+func (r *orderRepository) UpdateStatus(ctx context.Context, tx *sql.Tx, orderID int64, status string) error {
+	query := `UPDATE orders SET status = $1 WHERE id = $2`
+	_, err := tx.ExecContext(ctx, query, status, orderID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.ErrOrderNotFound
+		}
+	}
+	return nil
 }

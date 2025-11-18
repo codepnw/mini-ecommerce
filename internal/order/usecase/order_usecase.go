@@ -19,6 +19,7 @@ type OrderUsecase interface {
 	CreateOrder(ctx context.Context) (*order.Order, error)
 	GetOrderDetail(ctx context.Context, orderID int64) (*OrderView, error)
 	GetMyOrders(ctx context.Context) ([]*OrderListView, error)
+	CancelOrder(ctx context.Context, orderID int64) error
 }
 
 type orderUsecase struct {
@@ -26,6 +27,7 @@ type orderUsecase struct {
 	productRepo productrepository.ProductRepository
 	cartRepo    cartrepository.CartRepository
 	tx          database.TxManager
+	db          database.DBExec
 }
 
 func NewOrderUsecase(
@@ -33,12 +35,14 @@ func NewOrderUsecase(
 	productRepo productrepository.ProductRepository,
 	cartRepo cartrepository.CartRepository,
 	tx database.TxManager,
+	db database.DBExec,
 ) OrderUsecase {
 	return &orderUsecase{
 		orderRepo:   orderRepo,
 		productRepo: productRepo,
 		cartRepo:    cartRepo,
 		tx:          tx,
+		db:          db,
 	}
 }
 
@@ -146,7 +150,7 @@ func (u *orderUsecase) GetOrderDetail(ctx context.Context, orderID int64) (*Orde
 	}
 
 	// Get Items
-	itemsData, err := u.orderRepo.GetOrderItems(ctx, orderData.ID)
+	itemsData, err := u.orderRepo.GetOrderItems(ctx, u.db, orderData.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -196,4 +200,48 @@ func (u *orderUsecase) GetMyOrders(ctx context.Context) ([]*OrderListView, error
 		})
 	}
 	return orderView, nil
+}
+
+func (u *orderUsecase) CancelOrder(ctx context.Context, orderID int64) error {
+	userID := auth.GetUserID(ctx)
+	if userID == 0 {
+		return errs.ErrUnauthorized
+	}
+
+	orderData, err := u.orderRepo.GetOrder(ctx, orderID)
+	if err != nil {
+		return err
+	}
+
+	// Validate Order
+	if orderData.UserID != userID {
+		return errs.ErrNoPermissions
+	}
+	if orderData.Status != string(order.StatusPending) {
+		return errs.ErrCannotCancelOrder
+	}
+
+	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+		// Update Order Status
+		err := u.orderRepo.UpdateStatus(ctx, tx, orderID, string(order.StatusCancelled))
+		if err != nil {
+			return err
+		}
+
+		// Get Items
+		items, err := u.orderRepo.GetOrderItems(ctx, tx, orderData.ID)
+		if err != nil {
+			return err
+		}
+
+		for _, i := range items {
+			err := u.productRepo.IncreaseStock(ctx, tx, i.ProductID, i.Quantity)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	return err
 }

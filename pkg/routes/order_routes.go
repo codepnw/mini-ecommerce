@@ -16,7 +16,7 @@ func (cfg *routeConfig) OrderRoutes() {
 	cartRepo := cartrepository.NewCartRepository(cfg.db)
 	orderRepo := orderrepository.NewOrderRepository(cfg.db)
 
-	uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, cfg.tx)
+	uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, cfg.tx, cfg.db)
 	handler := orderhandler.NewOrderHandler(uc)
 
 	orderID := fmt.Sprintf("/:%s", consts.ParamOrderID)
@@ -26,5 +26,6 @@ func (cfg *routeConfig) OrderRoutes() {
 		r.POST("/", handler.CreateOrder)
 		r.GET(orderID, handler.GetOrderDetail)
 		r.GET("/", handler.GetMyOrders)
+		r.POST(orderID, handler.CancelOrder)
 	}
 }

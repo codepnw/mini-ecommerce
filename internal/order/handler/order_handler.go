@@ -76,3 +76,31 @@ func (h *orderHandler) GetMyOrders(c *gin.Context) {
 	}
 	response.OK(c, "", result)
 }
+
+func (h *orderHandler) CancelOrder(c *gin.Context) {
+	orderID, err := helper.GetParamInt(c, consts.ParamOrderID)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	err = h.uc.CancelOrder(c.Request.Context(), orderID)
+	if err != nil {
+		switch err {
+		case errs.ErrUnauthorized:
+			response.Unauthorized(c, err.Error())
+			return
+		case errs.ErrNoPermissions:
+			response.Forbidden(c, err.Error())
+			return
+		case errs.ErrCannotCancelOrder:
+			response.BadRequest(c, err.Error())
+			return
+		default:
+			response.InternalServerError(c, err)
+			return
+		}
+	}
+
+	response.OK(c, "order cancelled", nil)
+}

@@ -26,6 +26,20 @@ func (m *mockTxManager) WithTransaction(ctx context.Context, fn func(tx *sql.Tx)
 	return fn(nil)
 }
 
+type mockDB struct{}
+
+func (m *mockDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	return nil
+}
+
+func (m *mockDB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return nil, nil
+}
+
+func (m *mockDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	return nil, nil
+}
+
 func TestCreateOrder(t *testing.T) {
 	type testCase struct {
 		name        string
@@ -167,8 +181,9 @@ func TestCreateOrder(t *testing.T) {
 			cartRepo := cartrepository.NewMockCartRepository(ctrl)
 			prodRepo := productrepository.NewMockProductRepository(ctrl)
 			mockTx := &mockTxManager{}
+			mockDB := &mockDB{}
 
-			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx)
+			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
 
 			tc.mockFn(orderRepo, prodRepo, cartRepo)
 
@@ -226,7 +241,7 @@ func TestGetOrderDetail(t *testing.T) {
 						Quantity:        1,
 					},
 				}
-				orderRepo.EXPECT().GetOrderItems(gomock.Any(), mockOrder.ID).Return(mockItems, nil).Times(1)
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(mockItems, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -273,7 +288,7 @@ func TestGetOrderDetail(t *testing.T) {
 				}
 				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
 
-				orderRepo.EXPECT().GetOrderItems(gomock.Any(), mockOrder.ID).Return(nil, errors.New("db error")).Times(1)
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(nil, errors.New("db error")).Times(1)
 			},
 			expectedErr: errors.New("db error"),
 		},
@@ -287,8 +302,9 @@ func TestGetOrderDetail(t *testing.T) {
 		cartRepo := cartrepository.NewMockCartRepository(ctrl)
 		prodRepo := productrepository.NewMockProductRepository(ctrl)
 		mockTx := &mockTxManager{}
+		mockDB := &mockDB{}
 
-		uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx)
+		uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
 
 		tc.mockFn(orderRepo, prodRepo, cartRepo)
 
@@ -356,8 +372,9 @@ func TestGetMyOrders(t *testing.T) {
 			cartRepo := cartrepository.NewMockCartRepository(ctrl)
 			prodRepo := productrepository.NewMockProductRepository(ctrl)
 			mockTx := &mockTxManager{}
+			mockDB := &mockDB{}
 
-			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx)
+			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
 
 			tc.mockFn(orderRepo, prodRepo, cartRepo)
 
@@ -374,6 +391,116 @@ func TestGetMyOrders(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
+			}
+		})
+	}
+}
+
+func TestCancelOrder(t *testing.T) {
+	type testCase struct {
+		name        string
+		userID      int64
+		orderID     int64
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		expectedErr error
+	}
+
+	testCases := []testCase{
+		{
+			name:    "success",
+			userID:  10,
+			orderID: 100,
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+				mockOrder := &order.Order{
+					ID:     100,
+					UserID: 10,
+					Status: string(order.StatusPending),
+				}
+				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+
+				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), int64(mockOrder.ID), string(order.StatusCancelled)).Return(nil).Times(1)
+
+				mockItems := []*orderrepository.OrderItemDetail{
+					{ID: 1, ProductID: 100, Quantity: 2},
+					{ID: 2, ProductID: 101, Quantity: 5},
+				}
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(mockItems, nil).Times(1)
+
+				for _, i := range mockItems {
+					prodRepo.EXPECT().IncreaseStock(gomock.Any(), gomock.Any(), i.ProductID, i.Quantity).Return(nil).Times(1)
+				}
+			},
+			expectedErr: nil,
+		},
+		{
+			name:    "fail user id",
+			userID:  0,
+			orderID: 100,
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			},
+			expectedErr: errs.ErrUnauthorized,
+		},
+		{
+			name:    "fail cannot cancel",
+			userID:  10,
+			orderID: 100,
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+				mockOrder := &order.Order{
+					ID:     100,
+					UserID: 10,
+					Status: string(order.StatusCancelled),
+				}
+				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			},
+			expectedErr: errs.ErrCannotCancelOrder,
+		},
+		{
+			name:    "fail get items",
+			userID:  10,
+			orderID: 100,
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+				mockOrder := &order.Order{
+					ID:     100,
+					UserID: 10,
+					Status: string(order.StatusPending),
+				}
+				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+
+				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), int64(mockOrder.ID), string(order.StatusCancelled)).Return(nil).Times(1)
+
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(nil, errors.New("db error")).Times(1)
+			},
+			expectedErr: errors.New("db error"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			orderRepo := orderrepository.NewMockOrderRepository(ctrl)
+			cartRepo := cartrepository.NewMockCartRepository(ctrl)
+			prodRepo := productrepository.NewMockProductRepository(ctrl)
+			mockTx := &mockTxManager{}
+			mockDB := &mockDB{}
+
+			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
+
+			tc.mockFn(orderRepo, prodRepo, cartRepo)
+
+			// Set UserID
+			ctx := context.Background()
+			if tc.userID != 0 {
+				ctx = auth.SetUserID(ctx, tc.userID)
+			}
+
+			err := uc.CancelOrder(ctx, tc.orderID)
+
+			if tc.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

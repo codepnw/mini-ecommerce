@@ -94,6 +94,20 @@ func (mr *MockProductRepositoryMockRecorder) FindByIDForUpdate(ctx, tx, id inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByIDForUpdate", reflect.TypeOf((*MockProductRepository)(nil).FindByIDForUpdate), ctx, tx, id)
 }
 
+// IncreaseStock mocks base method.
+func (m *MockProductRepository) IncreaseStock(ctx context.Context, tx *sql.Tx, productID int64, quantity int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncreaseStock", ctx, tx, productID, quantity)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncreaseStock indicates an expected call of IncreaseStock.
+func (mr *MockProductRepositoryMockRecorder) IncreaseStock(ctx, tx, productID, quantity interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncreaseStock", reflect.TypeOf((*MockProductRepository)(nil).IncreaseStock), ctx, tx, productID, quantity)
+}
+
 // Insert mocks base method.
 func (m *MockProductRepository) Insert(ctx context.Context, input *product.Product) (*product.Product, error) {
 	m.ctrl.T.Helper()
