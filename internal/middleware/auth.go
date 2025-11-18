@@ -48,6 +48,7 @@ func (a *AuthMiddleware) AuthorizedMiddleware() gin.HandlerFunc {
 
 		ctx := c.Request.Context()
 		ctx = context.WithValue(ctx, consts.UserClaimsKey, claims)
+		ctx = context.WithValue(ctx, consts.UserIDKey, claims.ID)
 
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()

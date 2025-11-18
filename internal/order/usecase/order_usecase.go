@@ -3,6 +3,7 @@ package orderusecase
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	cartrepository "github.com/codepnw/mini-ecommerce/internal/cart/repository"
 	"github.com/codepnw/mini-ecommerce/internal/order"
@@ -17,6 +18,7 @@ import (
 type OrderUsecase interface {
 	CreateOrder(ctx context.Context) (*order.Order, error)
 	GetOrderDetail(ctx context.Context, orderID int64) (*OrderView, error)
+	GetMyOrders(ctx context.Context) ([]*OrderListView, error)
 }
 
 type orderUsecase struct {
@@ -165,7 +167,33 @@ func (u *orderUsecase) GetOrderDetail(ctx context.Context, orderID int64) (*Orde
 		ID:        orderData.ID,
 		Status:    orderData.Status,
 		Total:     orderData.Total,
-		CreatedAt: orderData.CreatedAt.GoString(),
+		CreatedAt: orderData.CreatedAt.Format(time.RFC3339),
 		Items:     itemViews,
 	}, nil
+}
+
+func (u *orderUsecase) GetMyOrders(ctx context.Context) ([]*OrderListView, error) {
+	// Get UserID
+	userID := auth.GetUserID(ctx)
+	if userID == 0 {
+		return nil, errs.ErrUnauthorized
+	}
+
+	// Get Orders
+	orderData, err := u.orderRepo.GetMyOrders(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map Struct -> View
+	orderView := make([]*OrderListView, 0)
+	for _, i := range orderData {
+		orderView = append(orderView, &OrderListView{
+			ID:        i.ID,
+			Status:    i.Status,
+			Total:     i.Total,
+			CreatedAt: i.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	return orderView, nil
 }

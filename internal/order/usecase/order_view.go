@@ -17,3 +17,10 @@ type OrderItemView struct {
 	ProductName     string  `json:"product_name"`
 	ProductSKU      string  `json:"product_sku"`
 }
+
+type OrderListView struct {
+	ID        int64   `json:"id"`
+	Status    string  `json:"status"`
+	Total     float64 `json:"total"`
+	CreatedAt string  `json:"created_at"`
+}

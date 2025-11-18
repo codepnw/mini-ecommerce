@@ -60,6 +60,9 @@ func RegisterRoutes(cfg *config.EnvConfig) error {
 	// Cart Routes
 	routeCfg.CartRoutes()
 
+	// Order Routes
+	routeCfg.OrderRoutes()
+
 	port := fmt.Sprintf(":%d", cfg.APP.Port)
 	return router.Run(port)
 }

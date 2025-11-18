@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/codepnw/mini-ecommerce/internal/cart"
 	cartrepository "github.com/codepnw/mini-ecommerce/internal/cart/repository"
@@ -305,5 +306,75 @@ func TestGetOrderDetail(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
 		}
+	}
+}
+
+func TestGetMyOrders(t *testing.T) {
+	type testCase struct {
+		name        string
+		userID      int64
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		expectedErr error
+	}
+
+	testCases := []testCase{
+		{
+			name:   "success",
+			userID: 10,
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+				mockOrders := []*order.Order{
+					{ID: 1, Status: "pending", Total: 100, CreatedAt: time.Now()},
+					{ID: 2, Status: "pending", Total: 200, CreatedAt: time.Now()},
+				}
+				orderRepo.EXPECT().GetMyOrders(gomock.Any(), int64(10)).Return(mockOrders, nil).Times(1)
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "fail unauthorized",
+			userID: 0,
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			},
+			expectedErr: errs.ErrUnauthorized,
+		},
+		{
+			name:   "fail get orders",
+			userID: 10,
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+				orderRepo.EXPECT().GetMyOrders(gomock.Any(), int64(10)).Return(nil, errors.New("db error")).Times(1)
+			},
+			expectedErr: errors.New("db error"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			orderRepo := orderrepository.NewMockOrderRepository(ctrl)
+			cartRepo := cartrepository.NewMockCartRepository(ctrl)
+			prodRepo := productrepository.NewMockProductRepository(ctrl)
+			mockTx := &mockTxManager{}
+
+			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx)
+
+			tc.mockFn(orderRepo, prodRepo, cartRepo)
+
+			// Set UserID
+			ctx := context.Background()
+			if tc.userID != 0 {
+				ctx = auth.SetUserID(ctx, tc.userID)
+			}
+
+			result, err := uc.GetMyOrders(ctx)
+
+			if tc.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+			}
+		})
 	}
 }

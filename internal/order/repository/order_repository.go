@@ -16,6 +16,7 @@ type OrderRepository interface {
 	CreateOrderItem(ctx context.Context, tx *sql.Tx, input *order.OrderItem) error
 	GetOrder(ctx context.Context, orderID int64) (*order.Order, error)
 	GetOrderItems(ctx context.Context, orderID int64) ([]*OrderItemDetail, error)
+	GetMyOrders(ctx context.Context, userID int64) ([]*order.Order, error)
 }
 
 type orderRepository struct {
@@ -84,7 +85,6 @@ func (r *orderRepository) GetOrder(ctx context.Context, orderID int64) (*order.O
 	return o, nil
 }
 
-
 type OrderItemDetail struct {
 	ID              int64   `json:"id"`
 	Quantity        int     `json:"quantity"`
@@ -128,4 +128,38 @@ func (r *orderRepository) GetOrderItems(ctx context.Context, orderID int64) ([]*
 		return nil, err
 	}
 	return items, nil
+}
+
+func (r *orderRepository) GetMyOrders(ctx context.Context, userID int64) ([]*order.Order, error) {
+	query := `
+		SELECT id, user_id, total, status, created_at
+		FROM orders WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orders := make([]*order.Order, 0)
+	for rows.Next() {
+		o := new(order.Order)
+		err = rows.Scan(
+			&o.ID,
+			&o.UserID,
+			&o.Total,
+			&o.Status,
+			&o.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, o)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return orders, nil
 }
