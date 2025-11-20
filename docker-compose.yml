@@ -1,8 +1,12 @@
 version: "3.8"
 
 services:
+  app:
+    build: .
+    env_file: dev.env
+
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: mini-ecommerce
     environment:
       POSTGRES_DB: ${DB_NAME}

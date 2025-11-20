@@ -10,6 +10,7 @@ import (
 	orderrepository "github.com/codepnw/mini-ecommerce/internal/order/repository"
 	"github.com/codepnw/mini-ecommerce/internal/product"
 	productrepository "github.com/codepnw/mini-ecommerce/internal/product/repository"
+	"github.com/codepnw/mini-ecommerce/internal/user"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/pkg/auth"
 	"github.com/codepnw/mini-ecommerce/pkg/database"
@@ -20,6 +21,7 @@ type OrderUsecase interface {
 	GetOrderDetail(ctx context.Context, orderID int64) (*OrderView, error)
 	GetMyOrders(ctx context.Context) ([]*OrderListView, error)
 	CancelOrder(ctx context.Context, orderID int64) error
+	UpdateOrderStatus(ctx context.Context, orderID int64, newStatus order.OrderStatus) error
 }
 
 type orderUsecase struct {
@@ -221,27 +223,93 @@ func (u *orderUsecase) CancelOrder(ctx context.Context, orderID int64) error {
 		return errs.ErrCannotCancelOrder
 	}
 
-	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		// Update Order Status
 		err := u.orderRepo.UpdateStatus(ctx, tx, orderID, string(order.StatusCancelled))
 		if err != nil {
 			return err
 		}
 
-		// Get Items
-		items, err := u.orderRepo.GetOrderItems(ctx, tx, orderData.ID)
+		// Return Items
+		err = u.returnItemToStock(ctx, tx, orderID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (u *orderUsecase) UpdateOrderStatus(ctx context.Context, orderID int64, newStatus order.OrderStatus) error {
+	// Check Permissions
+	currentUser, err := auth.GetCurrentUser(ctx)
+	if err != nil {
+		return errs.ErrUnauthorized
+	}
+	if currentUser.Role != string(user.RoleAdmin) {
+		return errs.ErrNoPermissions
+	}
+
+	// Get Order
+	orderData, err := u.orderRepo.GetOrder(ctx, orderID)
+	if err != nil {
+		return err
+	}
+
+	// Validate Status
+	if !u.validateStatus(order.OrderStatus(orderData.Status), newStatus) {
+		return errs.ErrInvalidStatusChange
+	}
+
+	return u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
+		// Update Status
+		err := u.orderRepo.UpdateStatus(ctx, tx, orderID, string(newStatus))
 		if err != nil {
 			return err
 		}
 
-		for _, i := range items {
-			err := u.productRepo.IncreaseStock(ctx, tx, i.ProductID, i.Quantity)
-			if err != nil {
-				return err
-			}
+		// Return Items
+		err = u.returnItemToStock(ctx, tx, orderID)
+		if err != nil {
+			return err
 		}
-
 		return nil
 	})
-	return err
+}
+
+func (u *orderUsecase) validateStatus(oldStatus, newStatus order.OrderStatus) bool {
+	if oldStatus == newStatus {
+		return false
+	}
+
+	switch oldStatus {
+	case order.StatusPending:
+		// pending -> paid or cancelled
+		return newStatus == order.StatusPaid || newStatus == order.StatusCancelled
+	case order.StatusPaid:
+		// paid -> shipped or cancelled
+		return newStatus == order.StatusShipped || newStatus == order.StatusCancelled
+	case order.StatusShipped:
+		// shipped -> completed
+		return newStatus == order.StatusCompleted
+	case order.StatusCancelled, order.StatusCompleted:
+		// cancelled, completed end process cannot update
+		return false
+	}
+	return false
+}
+
+func (u *orderUsecase) returnItemToStock(ctx context.Context, tx *sql.Tx, orderID int64) error {
+	// Get Items
+	items, err := u.orderRepo.GetOrderItems(ctx, tx, orderID)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range items {
+		err := u.productRepo.IncreaseStock(ctx, tx, i.ProductID, i.Quantity)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

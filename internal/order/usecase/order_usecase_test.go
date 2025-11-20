@@ -16,6 +16,7 @@ import (
 	productrepository "github.com/codepnw/mini-ecommerce/internal/product/repository"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/pkg/auth"
+	"github.com/codepnw/mini-ecommerce/pkg/jwt"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -496,6 +497,94 @@ func TestCancelOrder(t *testing.T) {
 			}
 
 			err := uc.CancelOrder(ctx, tc.orderID)
+
+			if tc.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestUpdateOrderStatus(t *testing.T) {
+	type testCase struct {
+		name        string
+		user        *jwt.UserClaims
+		orderID     int64
+		status      string
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		expectedErr error
+	}
+
+	testCases := []testCase{
+		{
+			name:    "success",
+			user:    &jwt.UserClaims{ID: 100, Role: "admin"},
+			orderID: 100,
+			status:  "paid",
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+				mockOrder := &order.Order{ID: 100, Status: "pending"}
+				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+
+				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), mockOrder.ID, "paid").Return(nil).Times(1)
+
+				mockItems := []*orderrepository.OrderItemDetail{
+					{ProductID: 100, Quantity: 2},
+					{ProductID: 101, Quantity: 1},
+				}
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(mockItems, nil).Times(1)
+
+				for _, i := range mockItems {
+					prodRepo.EXPECT().IncreaseStock(gomock.Any(), gomock.Any(), i.ProductID, i.Quantity).Return(nil).Times(1)
+				}
+			},
+			expectedErr: nil,
+		},
+		{
+			name:    "fail no permissions",
+			user:    &jwt.UserClaims{ID: 100, Role: "user"},
+			orderID: 100,
+			status:  "paid",
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			},
+			expectedErr: errs.ErrNoPermissions,
+		},
+		{
+			name:    "fail invalid status",
+			user:    &jwt.UserClaims{ID: 100, Role: "admin"},
+			orderID: 100,
+			status:  "completed",
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+				mockOrder := &order.Order{ID: 100, Status: "pending"}
+				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			},
+			expectedErr: errs.ErrInvalidStatusChange,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			orderRepo := orderrepository.NewMockOrderRepository(ctrl)
+			cartRepo := cartrepository.NewMockCartRepository(ctrl)
+			prodRepo := productrepository.NewMockProductRepository(ctrl)
+			mockTx := &mockTxManager{}
+			mockDB := &mockDB{}
+
+			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
+
+			tc.mockFn(orderRepo, prodRepo, cartRepo)
+
+			// Set User
+			ctx := context.Background()
+			if tc.user != nil {
+				ctx = auth.SetCurrentUser(ctx, tc.user)
+			}
+
+			err := uc.UpdateOrderStatus(ctx, tc.orderID, order.OrderStatus(tc.status))
 
 			if tc.expectedErr != nil {
 				assert.Error(t, err)

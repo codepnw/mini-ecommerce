@@ -35,6 +35,7 @@ var (
 
 // Order
 var (
-	ErrOrderNotFound     = errors.New("order not found")
-	ErrCannotCancelOrder = errors.New("cannot cancel order")
+	ErrOrderNotFound       = errors.New("order not found")
+	ErrCannotCancelOrder   = errors.New("cannot cancel order")
+	ErrInvalidStatusChange = errors.New("invalid status change")
 )

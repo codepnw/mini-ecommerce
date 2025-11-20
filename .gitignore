@@ -16,3 +16,4 @@ go.work
 
 *.env
 *.txt
+docker-compose.yml

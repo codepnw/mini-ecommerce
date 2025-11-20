@@ -6,7 +6,10 @@ type OrderStatus string
 
 const (
 	StatusPending   OrderStatus = "pending"
+	StatusPaid      OrderStatus = "paid"
+	StatusShipped   OrderStatus = "shipped"
 	StatusCancelled OrderStatus = "cancelled"
+	StatusCompleted OrderStatus = "completed"
 )
 
 type Order struct {
