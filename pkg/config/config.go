@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/codepnw/mini-ecommerce/pkg/validate"
@@ -35,7 +36,13 @@ type JWTConfig struct {
 
 func LoadConfig(path string) (*EnvConfig, error) {
 	if err := godotenv.Load(path); err != nil {
-		return nil, fmt.Errorf("load env failed: %w", err)
+		/*
+			NOTE: No Docker return error
+			return nil, fmt.Errorf("load env failed: %w", err)
+
+			NOTE: Docker copy .env variables to OS environment variables.
+		*/
+		log.Println("⚠️  Warning: .env file not found. Using OS environment variables.")
 	}
 
 	cfg := new(EnvConfig)

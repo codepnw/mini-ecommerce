@@ -1,16 +1,32 @@
 version: "3.8"
 
 services:
-  app:
+  api:
+    container_name: mini-ecommerce-api
     build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
     env_file: dev.env
+    environment:
+      - DB_HOST=db
+      - TZ=Asia/Bangkok
 
   db:
     image: postgres:16-alpine
-    container_name: mini-ecommerce
+    container_name: mini-ecommerce-db
+    env_file: dev.env
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGTZ: Asia/Bangkok
     ports:
       - "${DB_PORT}:5432"
+    volumes:
+      - "pg_data:/var/lib/postgresql/data"
+      - /etc/localtime:/etc/localtime:ro
+
+volumes:
+  pg_data:
