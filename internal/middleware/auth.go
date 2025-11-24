@@ -30,12 +30,14 @@ func (a *AuthMiddleware) AuthorizedMiddleware() gin.HandlerFunc {
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {
 			response.Unauthorized(c, "auth header is missing")
+			c.Abort()
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			response.Unauthorized(c, "invalid token format")
+			c.Abort()
 			return
 		}
 
@@ -43,6 +45,7 @@ func (a *AuthMiddleware) AuthorizedMiddleware() gin.HandlerFunc {
 		if err != nil {
 			log.Printf("verify token failed: %v", err)
 			response.Unauthorized(c, "verify token failed")
+			c.Abort()
 			return
 		}
 
@@ -88,6 +91,7 @@ func (a *AuthMiddleware) RolesRequired(roles ...user.RoleType) gin.HandlerFunc {
 		userCtx, err := auth.GetCurrentUser(c.Request.Context())
 		if err != nil {
 			response.Unauthorized(c, err.Error())
+			c.Abort()
 			return
 		}
 
@@ -98,5 +102,6 @@ func (a *AuthMiddleware) RolesRequired(roles ...user.RoleType) gin.HandlerFunc {
 			}
 		}
 		response.Forbidden(c, "no permissions")
+		c.Abort()
 	}
 }
