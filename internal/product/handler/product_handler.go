@@ -86,10 +86,14 @@ func (h *productHandler) GetByID(c *gin.Context) {
 	response.OK(c, "", resp)
 }
 
-func (h *productHandler) GetAll(c *gin.Context) {
-	// TODO: filter
+func (h *productHandler) List(c *gin.Context) {
+	filter := new(product.ProductFilter)
+	if err := c.ShouldBindQuery(filter); err != nil {
+		response.BadRequest(c, "invalid filter params")
+		return
+	}
 
-	resp, err := h.uc.GetAll(c.Request.Context())
+	resp, err := h.uc.List(c.Request.Context(), filter)
 	if err != nil {
 		response.InternalServerError(c, err)
 		return

@@ -19,13 +19,13 @@ func TestCreateUsecase(t *testing.T) {
 	type testCase struct {
 		name        string
 		input       *product.Product
-		mockFn      func(mockRepo *productrepository.MockProductRepository)
+		mockFn      func(mockRepo *productrepository.MockProductRepository, input *product.Product)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name: "success create",
+			name: "success",
 			input: &product.Product{
 				Name:    "IPhone 17",
 				Price:   35900,
@@ -33,23 +33,19 @@ func TestCreateUsecase(t *testing.T) {
 				OwnerID: 10,
 				SKU:     "apple-iphone-17",
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockProduct := &product.Product{
-					ID:   1,
-					Name: "IPhone 17",
-					SKU:  "apple-iphone-17",
-				}
-				mockRepo.EXPECT().SKUExists(gomock.Any(), "apple-iphone-17").Return(false, nil).Times(1)
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
+				p := mockProduct()
+				mockRepo.EXPECT().SKUExists(gomock.Any(), input.SKU).Return(false, nil).Times(1)
 
-				mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(mockProduct, nil).Times(1)
+				mockRepo.EXPECT().Insert(gomock.Any(), input).Return(p, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
 		{
 			name:  "fail sku aleady exists",
 			input: &product.Product{SKU: "apple-iphone-17"},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockRepo.EXPECT().SKUExists(gomock.Any(), "apple-iphone-17").Return(true, nil).Times(1)
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
+				mockRepo.EXPECT().SKUExists(gomock.Any(), input.SKU).Return(true, nil).Times(1)
 			},
 			expectedErr: errs.ErrProductSKUExists,
 		},
@@ -62,27 +58,25 @@ func TestCreateUsecase(t *testing.T) {
 				OwnerID: 10,
 				SKU:     "apple-iphone-17",
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockRepo.EXPECT().SKUExists(gomock.Any(), "apple-iphone-17").Return(false, nil).Times(1)
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
+				mockRepo.EXPECT().SKUExists(gomock.Any(), input.SKU).Return(false, nil).Times(1)
 
-				mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil, errors.New("db error")).Times(1)
+				mockRepo.EXPECT().Insert(gomock.Any(), input).Return(nil, errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			// Setup
+			uc, mockRepo := setup(t)
+			ctx := mockUserClaims()
 
-			// Dependencies
-			mockRepo := productrepository.NewMockProductRepository(ctrl)
-			uc := productusecase.NewProductUsecase(mockRepo)
+			tc.mockFn(mockRepo, tc.input)
 
-			tc.mockFn(mockRepo)
-
-			result, err := uc.Create(context.Background(), tc.input)
+			// Create Usecase
+			result, err := uc.Create(ctx, tc.input)
 
 			if tc.expectedErr != nil {
 				assert.Error(t, err)
@@ -100,58 +94,47 @@ func TestCreateUsecase(t *testing.T) {
 func TestGetProduct(t *testing.T) {
 	type testCase struct {
 		name        string
-		input       *product.Product
-		mockFn      func(mockRepo *productrepository.MockProductRepository)
+		productID   int64
+		mockFn      func(mockRepo *productrepository.MockProductRepository, productID int64)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name: "success get product",
-			input: &product.Product{
-				ID: 1,
-			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockProduct := &product.Product{
-					ID:   1,
-					Name: "IPhone 17",
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+			name:      "success",
+			productID: 1,
+			mockFn: func(mockRepo *productrepository.MockProductRepository, productID int64) {
+				p := mockProduct()
+				mockRepo.EXPECT().FindByID(gomock.Any(), productID).Return(p, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "fail not found",
-			input: &product.Product{
-				ID: 1,
-			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(nil, errs.ErrProductNotFound).Times(1)
+			name:      "fail not found",
+			productID: 100,
+			mockFn: func(mockRepo *productrepository.MockProductRepository, productID int64) {
+				mockRepo.EXPECT().FindByID(gomock.Any(), productID).Return(nil, errs.ErrProductNotFound).Times(1)
 			},
 			expectedErr: errs.ErrProductNotFound,
 		},
 		{
-			name: "fail get product",
-			input: &product.Product{
-				ID: 1,
+			name:      "fail get product",
+			productID: 100,
+			mockFn: func(mockRepo *productrepository.MockProductRepository, productID int64) {
+				mockRepo.EXPECT().FindByID(gomock.Any(), productID).Return(nil, errDBMock).Times(1)
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(nil, errors.New("db error")).Times(1)
-			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+		// Setup
+		uc, mockRepo := setup(t)
 
-		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo)
+		tc.mockFn(mockRepo, tc.productID)
 
-		tc.mockFn(mockRepo)
-
-		result, err := uc.GetByID(context.Background(), tc.input.ID)
+		// GetByID Usecase
+		result, err := uc.GetByID(context.Background(), tc.productID)
 
 		if tc.expectedErr != nil {
 			assert.Error(t, err)
@@ -175,39 +158,38 @@ func TestGetProducts(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			name:  "success get products",
+			name:  "success",
 			input: nil,
 			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockProducts := []*product.Product{
-					{ID: 1, Name: "IPhone"},
-					{ID: 2, Name: "Macbook"},
+				p := mockProduct()
+				list := []*product.Product{
+					{ID: p.ID},
+					{ID: p.ID + 1},
 				}
-				mockRepo.EXPECT().List(gomock.Any()).Return(mockProducts, nil).Times(1)
+				mockRepo.EXPECT().List(gomock.Any(), gomock.Any()).Return(list, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "fail get products",
-			input: &product.Product{
-				ID: 1,
-			},
+			name:  "fail get products",
+			input: nil,
 			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockRepo.EXPECT().List(gomock.Any()).Return(nil, errors.New("db error")).Times(1)
+				mockRepo.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo)
+		// Setup
+		uc, mockRepo := setup(t)
 
 		tc.mockFn(mockRepo)
 
-		result, err := uc.GetAll(context.Background())
+		// List Usecase
+		result, err := uc.List(context.Background(), &product.ProductFilter{
+			Limit: 20,
+		})
 
 		if tc.expectedErr != nil {
 			assert.Error(t, err)
@@ -230,18 +212,15 @@ func TestUpdateProduct(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			name: "success update product",
+			name: "success",
 			input: &product.Product{
 				ID:      1,
 				OwnerID: 10,
 				Stock:   20,
 			},
 			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
-				mockProduct := &product.Product{
-					ID:      1,
-					OwnerID: 10,
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+				p := mockProduct()
+				mockRepo.EXPECT().FindByID(gomock.Any(), input.ID).Return(p, nil).Times(1)
 
 				mockRepo.EXPECT().Update(gomock.Any(), input).Return(input, nil).Times(1)
 			},
@@ -250,11 +229,10 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "fail product not found",
 			input: &product.Product{
-				ID:      1,
-				OwnerID: 10,
+				ID: 1,
 			},
 			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(nil, errs.ErrProductNotFound).Times(1)
+				mockRepo.EXPECT().FindByID(gomock.Any(), input.ID).Return(nil, errs.ErrProductNotFound).Times(1)
 			},
 			expectedErr: errs.ErrProductNotFound,
 		},
@@ -262,11 +240,12 @@ func TestUpdateProduct(t *testing.T) {
 			name: "fail no permission",
 			input: &product.Product{
 				ID:      1,
-				OwnerID: 11,
-				Stock:   20,
+				OwnerID: 10,
 			},
 			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(input, nil).Times(1)
+				p := mockProduct()
+				p.OwnerID = 11
+				mockRepo.EXPECT().FindByID(gomock.Any(), input.ID).Return(p, nil).Times(1)
 			},
 			expectedErr: errs.ErrNoPermissions,
 		},
@@ -277,30 +256,23 @@ func TestUpdateProduct(t *testing.T) {
 				OwnerID: 10,
 			},
 			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
-				mockProduct := &product.Product{
-					ID:      1,
-					OwnerID: 10,
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+				p := mockProduct()
+				mockRepo.EXPECT().FindByID(gomock.Any(), input.ID).Return(p, nil).Times(1)
 
-				mockRepo.EXPECT().Update(gomock.Any(), input).Return(nil, errors.New("db error")).Times(1)
+				mockRepo.EXPECT().Update(gomock.Any(), input).Return(nil, errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockUser := &jwt.UserClaims{ID: 10, Role: "seller"}
-		ctx := auth.SetCurrentUser(context.Background(), mockUser)
-
-		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo)
+		// Setup
+		uc, mockRepo := setup(t)
+		ctx := mockUserClaims()
 
 		tc.mockFn(mockRepo, tc.input)
 
+		// Update Usecase
 		result, err := uc.Update(ctx, tc.input)
 
 		if tc.expectedErr != nil {
@@ -318,25 +290,22 @@ func TestDeleteProduct(t *testing.T) {
 	type testCase struct {
 		name        string
 		input       *product.Product
-		mockFn      func(mockRepo *productrepository.MockProductRepository)
+		mockFn      func(mockRepo *productrepository.MockProductRepository, input *product.Product)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name: "success delete product",
+			name: "success",
 			input: &product.Product{
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockProduct := &product.Product{
-					ID:      1,
-					OwnerID: 10,
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
+				p := mockProduct()
+				mockRepo.EXPECT().FindByID(gomock.Any(), input.ID).Return(p, nil).Times(1)
 
-				mockRepo.EXPECT().Delete(gomock.Any(), int64(1)).Return(nil).Times(1)
+				mockRepo.EXPECT().Delete(gomock.Any(), input.ID).Return(nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -346,14 +315,11 @@ func TestDeleteProduct(t *testing.T) {
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockProduct := &product.Product{
-					ID:      1,
-					OwnerID: 10,
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
+				p := mockProduct()
+				mockRepo.EXPECT().FindByID(gomock.Any(), input.ID).Return(p, nil).Times(1)
 
-				mockRepo.EXPECT().Delete(gomock.Any(), int64(1)).Return(errs.ErrProductNotFound).Times(1)
+				mockRepo.EXPECT().Delete(gomock.Any(), input.ID).Return(errs.ErrProductNotFound).Times(1)
 			},
 			expectedErr: errs.ErrProductNotFound,
 		},
@@ -363,12 +329,10 @@ func TestDeleteProduct(t *testing.T) {
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockProduct := &product.Product{
-					ID:      1,
-					OwnerID: 11,
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
+				p := mockProduct()
+				p.OwnerID = 11
+				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(p, nil).Times(1)
 			},
 			expectedErr: errs.ErrNoPermissions,
 		},
@@ -378,30 +342,21 @@ func TestDeleteProduct(t *testing.T) {
 				ID:      1,
 				OwnerID: 10,
 			},
-			mockFn: func(mockRepo *productrepository.MockProductRepository) {
-				mockProduct := &product.Product{
-					ID:      1,
-					OwnerID: 10,
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), int64(1)).Return(mockProduct, nil).Times(1)
+			mockFn: func(mockRepo *productrepository.MockProductRepository, input *product.Product) {
+				p := mockProduct()
+				mockRepo.EXPECT().FindByID(gomock.Any(), input.ID).Return(p, nil).Times(1)
 
-				mockRepo.EXPECT().Delete(gomock.Any(), int64(1)).Return(errors.New("db error")).Times(1)
+				mockRepo.EXPECT().Delete(gomock.Any(), input.ID).Return(errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+		uc, mockRepo := setup(t)
+		ctx := mockUserClaims()
 
-		mockUser := &jwt.UserClaims{ID: 10, Role: "seller"}
-		ctx := auth.SetCurrentUser(context.Background(), mockUser)
-
-		mockRepo := productrepository.NewMockProductRepository(ctrl)
-		uc := productusecase.NewProductUsecase(mockRepo)
-
-		tc.mockFn(mockRepo)
+		tc.mockFn(mockRepo, tc.input)
 
 		err := uc.Delete(ctx, tc.input.ID)
 
@@ -413,3 +368,38 @@ func TestDeleteProduct(t *testing.T) {
 		}
 	}
 }
+
+// ============ Helper ================
+// ------------------------------------
+func setup(t *testing.T) (productusecase.ProductUsecase, *productrepository.MockProductRepository) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := productrepository.NewMockProductRepository(ctrl)
+	uc := productusecase.NewProductUsecase(mockRepo)
+
+	return uc, mockRepo
+}
+
+func mockUserClaims() context.Context {
+	mockUser := &jwt.UserClaims{
+		ID:    10,
+		Email: "example@mail.com",
+		Role:  "user",
+	}
+	return auth.SetCurrentUser(context.Background(), mockUser)
+}
+
+func mockProduct() *product.Product {
+	return &product.Product{
+		ID:      100,
+		OwnerID: 10,
+		Name:    "Macbook",
+		Stock:   20,
+		SKU:     "mock-product",
+	}
+}
+
+var errDBMock = errors.New("db error")

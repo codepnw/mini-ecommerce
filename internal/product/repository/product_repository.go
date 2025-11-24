@@ -17,12 +17,13 @@ import (
 type ProductRepository interface {
 	Insert(ctx context.Context, input *product.Product) (*product.Product, error)
 	FindByID(ctx context.Context, id int64) (*product.Product, error)
-	FindByIDForUpdate(ctx context.Context, tx *sql.Tx, id int64) (*product.Product, error)
-	List(ctx context.Context) ([]*product.Product, error)
+	List(ctx context.Context, filter *product.ProductFilter) ([]*product.Product, error)
 	Update(ctx context.Context, input *product.Product) (*product.Product, error)
 	Delete(ctx context.Context, id int64) error
-
 	SKUExists(ctx context.Context, sku string) (bool, error)
+
+	// Transaction
+	FindByIDForUpdate(ctx context.Context, tx *sql.Tx, id int64) (*product.Product, error)
 	DecreaseStock(ctx context.Context, tx *sql.Tx, productID int64, qtyDecrease int) error
 	IncreaseStock(ctx context.Context, tx *sql.Tx, productID int64, quantity int) error
 }
@@ -110,15 +111,30 @@ func (r *productRepository) FindByIDForUpdate(ctx context.Context, tx *sql.Tx, i
 	return r.modelToDomain(p), nil
 }
 
-func (r *productRepository) List(ctx context.Context) ([]*product.Product, error) {
+func (r *productRepository) List(ctx context.Context, filter *product.ProductFilter) ([]*product.Product, error) {
 	query := `
 		SELECT id, name, price, stock, sku, owner_id, created_at, updated_at
-		FROM products
+		FROM products WHERE 1=1
 	`
-	rows, err := r.db.QueryContext(ctx, query)
+	var args []any
+	idx := 1
+
+	if filter.Search != "" {
+		query += fmt.Sprintf(" AND name ILIKE $%d", idx)
+		args = append(args, "%"+filter.Search+"%")
+		idx++
+	}
+
+	offset := (filter.Page - 1) * filter.Limit
+
+	query += fmt.Sprintf(" ORDER BY id DESC LIMIT $%d OFFSET $%d", idx, idx+1)
+	args = append(args, filter.Limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var products []*product.Product
 	for rows.Next() {
@@ -137,7 +153,11 @@ func (r *productRepository) List(ctx context.Context) ([]*product.Product, error
 		}
 		products = append(products, p)
 	}
-	return products, rows.Err()
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 
 func (r *productRepository) Update(ctx context.Context, input *product.Product) (*product.Product, error) {

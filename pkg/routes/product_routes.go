@@ -24,7 +24,7 @@ func (cfg *routeConfig) ProductRoutes() {
 	)
 	{
 		// Public
-		public.GET("/", handler.GetAll)
+		public.GET("/", handler.List)
 		public.GET(paramID, handler.GetByID)
 		// Admin & Seller
 		private.POST("/", handler.Create)

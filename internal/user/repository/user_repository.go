@@ -7,23 +7,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/user"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/pkg/database"
 )
 
 //go:generate mockgen -source=user_repository.go -destination=mock_user_repository.go -package=userrepository
 
 type UserRepository interface {
-	// For Transactions
-	Insert(ctx context.Context, db database.DBExec, input *user.User) (*user.User, error)
-	SaveRefreshToken(ctx context.Context, db database.DBExec, input *user.Auth) error
-	RevokedRefreshToken(ctx context.Context, db database.DBExec, token string) error
-
-	// Use *sql.DB
 	FindByID(ctx context.Context, id int64) (*user.User, error)
 	FindByEmail(ctx context.Context, email string) (*user.User, error)
 	ValidateRefreshToken(ctx context.Context, token string) (int64, error)
+
+	// Transaction
+	Insert(ctx context.Context, db database.DBExec, input *user.User) (*user.User, error)
+	SaveRefreshToken(ctx context.Context, db database.DBExec, input *user.Auth) error
+	RevokedRefreshToken(ctx context.Context, db database.DBExec, token string) error
 }
 
 type userRepository struct {

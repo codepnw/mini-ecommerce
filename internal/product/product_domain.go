@@ -12,3 +12,9 @@ type Product struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type ProductFilter struct {
+	Search string `form:"search"`
+	Page   int    `form:"page"`
+	Limit  int    `form:"limit"`
+}

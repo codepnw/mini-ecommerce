@@ -124,18 +124,18 @@ func (mr *MockProductRepositoryMockRecorder) Insert(ctx, input interface{}) *gom
 }
 
 // List mocks base method.
-func (m *MockProductRepository) List(ctx context.Context) ([]*product.Product, error) {
+func (m *MockProductRepository) List(ctx context.Context, filter *product.ProductFilter) ([]*product.Product, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", ctx)
+	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*product.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // List indicates an expected call of List.
-func (mr *MockProductRepositoryMockRecorder) List(ctx interface{}) *gomock.Call {
+func (mr *MockProductRepositoryMockRecorder) List(ctx, filter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockProductRepository)(nil).List), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockProductRepository)(nil).List), ctx, filter)
 }
 
 // SKUExists mocks base method.

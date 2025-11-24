@@ -14,7 +14,7 @@ import (
 type ProductUsecase interface {
 	Create(ctx context.Context, input *product.Product) (*product.Product, error)
 	GetByID(ctx context.Context, id int64) (*product.Product, error)
-	GetAll(ctx context.Context) ([]*product.Product, error)
+	List(ctx context.Context, filter *product.ProductFilter) ([]*product.Product, error)
 	Update(ctx context.Context, input *product.Product) (*product.Product, error)
 	Delete(ctx context.Context, productID int64) error
 }
@@ -49,35 +49,40 @@ func (u *productUsecase) Create(ctx context.Context, input *product.Product) (*p
 		return nil, errs.ErrProductSKUExists
 	}
 
-	resp, err := u.repo.Insert(ctx, input)
+	productData, err := u.repo.Insert(ctx, input)
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return productData, nil
 }
 
 func (u *productUsecase) GetByID(ctx context.Context, id int64) (*product.Product, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
-	resp, err := u.repo.FindByID(ctx, id)
+	productData, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return productData, nil
 }
 
-func (u *productUsecase) GetAll(ctx context.Context) ([]*product.Product, error) {
+func (u *productUsecase) List(ctx context.Context, filter *product.ProductFilter) ([]*product.Product, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
-	// TODO: filter products
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.Limit <= 0 || filter.Limit > 100 {
+		filter.Limit = 10
+	}
 
-	resp, err := u.repo.List(ctx)
+	products, err := u.repo.List(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return products, nil
 }
 
 func (u *productUsecase) Update(ctx context.Context, input *product.Product) (*product.Product, error) {
@@ -90,11 +95,11 @@ func (u *productUsecase) Update(ctx context.Context, input *product.Product) (*p
 	}
 
 	// Update Product
-	resp, err := u.repo.Update(ctx, input)
+	productData, err := u.repo.Update(ctx, input)
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return productData, nil
 }
 
 func (u *productUsecase) Delete(ctx context.Context, productID int64) error {
