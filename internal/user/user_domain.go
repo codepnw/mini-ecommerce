@@ -22,10 +22,10 @@ type User struct {
 }
 
 type Auth struct {
-	ID        int64
-	UserID    int64
-	Token     string
-	Revoked   bool
-	ExpiresAt time.Time
-	CreatedAt time.Time
+	ID           int64
+	UserID       int64
+	RefreshToken string
+	Revoked      bool
+	ExpiresAt    time.Time
+	CreatedAt    time.Time
 }

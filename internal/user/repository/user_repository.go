@@ -15,11 +15,14 @@ import (
 //go:generate mockgen -source=user_repository.go -destination=mock_user_repository.go -package=userrepository
 
 type UserRepository interface {
+	// For Transactions
 	Insert(ctx context.Context, db database.DBExec, input *user.User) (*user.User, error)
-	FindByID(ctx context.Context, id int64) (*user.User, error)
-	FindByEmail(ctx context.Context, email string) (*user.User, error)
 	SaveRefreshToken(ctx context.Context, db database.DBExec, input *user.Auth) error
 	RevokedRefreshToken(ctx context.Context, db database.DBExec, token string) error
+
+	// Use *sql.DB
+	FindByID(ctx context.Context, id int64) (*user.User, error)
+	FindByEmail(ctx context.Context, email string) (*user.User, error)
 	ValidateRefreshToken(ctx context.Context, token string) (int64, error)
 }
 
@@ -80,10 +83,15 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*user.User, er
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*user.User, error) {
 	u := new(user.User)
-	query := `SELECT id, email, password, role FROM users WHERE email = $1`
-
+	query := `
+		SELECT id, email, password, role FROM users
+		WHERE email = $1
+	`
 	err := r.db.QueryRowContext(ctx, query, email).Scan(&u.ID, &u.Email, &u.Password, &u.Role)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrUserNotFound
+		}
 		return nil, err
 	}
 	return u, nil
@@ -96,7 +104,7 @@ func (r *userRepository) SaveRefreshToken(ctx context.Context, db database.DBExe
 		DO UPDATE SET
 			token = EXCLUDED.token, expires_at = EXCLUDED.expires_at, revoked = FALSE
 	`
-	_, err := db.ExecContext(ctx, query, input.UserID, input.Token, input.ExpiresAt)
+	_, err := db.ExecContext(ctx, query, input.UserID, input.RefreshToken, input.ExpiresAt)
 	return err
 }
 

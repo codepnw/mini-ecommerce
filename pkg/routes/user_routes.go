@@ -14,7 +14,6 @@ func (cfg *routeConfig) UserRoutes() error {
 		Repo:  repo,
 		Token: cfg.token,
 		Tx:    cfg.tx,
-		DB:    cfg.db,
 	})
 	if err != nil {
 		return fmt.Errorf("user usecase config: %w", err)

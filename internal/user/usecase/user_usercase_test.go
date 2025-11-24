@@ -6,10 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/user"
 	userrepository "github.com/codepnw/mini-ecommerce/internal/user/repository"
 	userusecase "github.com/codepnw/mini-ecommerce/internal/user/usecase"
+	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/pkg/config"
 	"github.com/codepnw/mini-ecommerce/pkg/jwt"
 	"github.com/codepnw/mini-ecommerce/pkg/password"
@@ -27,20 +27,17 @@ func TestRegisterUsecse(t *testing.T) {
 	type testCase struct {
 		name        string
 		input       *user.User
-		mockFn      func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager)
+		mockFn      func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name:  "success user created",
+			name:  "success",
 			input: &user.User{Email: "user@example.com", Password: "password"},
-			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager) {
-				mockUser := &user.User{
-					ID:    1,
-					Email: "user@example.com",
-				}
-				mockRepo.EXPECT().Insert(gomock.Any(), nil, gomock.Any()).Return(mockUser, nil).Times(1)
+			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User) {
+				u := mockUserData()
+				mockRepo.EXPECT().Insert(gomock.Any(), nil, input).Return(u, nil).Times(1)
 
 				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(nil).Times(1)
 			},
@@ -49,61 +46,34 @@ func TestRegisterUsecse(t *testing.T) {
 		{
 			name:  "fail email already exists",
 			input: &user.User{Email: "user@example.com", Password: "password"},
-			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager) {
-				mockRepo.EXPECT().Insert(gomock.Any(), nil, gomock.Any()).Return(nil, errs.ErrEmailAlreadyExists).Times(1)
+			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User) {
+				mockRepo.EXPECT().Insert(gomock.Any(), nil, input).Return(nil, errs.ErrEmailAlreadyExists).Times(1)
 			},
 			expectedErr: errs.ErrEmailAlreadyExists,
 		},
 		{
 			name:  "fail save token",
 			input: &user.User{Email: "user@example.com", Password: "password"},
-			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager) {
-				mockUser := &user.User{
-					ID:    1,
-					Email: "user@example.com",
-				}
-				mockRepo.EXPECT().Insert(gomock.Any(), nil, gomock.Any()).Return(mockUser, nil).Times(1)
+			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User) {
+				u := mockUserData()
+				mockRepo.EXPECT().Insert(gomock.Any(), nil, input).Return(u, nil).Times(1)
 
-				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(errors.New("db error")).Times(1)
+				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			// Setup
+			uc, mockRepo, mockTx := setup(t)
 
-			// Dependencies
-			mockRepo := userrepository.NewMockUserRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockToken, err := jwt.InitJWT(config.JWTConfig{
-				SecretKey:  "mock_secret_key",
-				RefreshKey: "mock_refresh_key",
-			})
-			if err != nil {
-				t.Fatalf("InitJWT failed: %v", err)
-			}
+			tc.mockFn(mockRepo, mockTx, tc.input)
 
-			// NewUsecase
-			uc, err := userusecase.NewUserUsecase(&userusecase.UserUsecaseConfig{
-				Repo:  mockRepo,
-				Tx:    mockTx,
-				Token: mockToken,
-				DB:    nil,
-			})
-			if err != nil {
-				t.Fatalf("NewUserUsecase failed: %v", err)
-			}
-
-			// Mock Repo Response
-			tc.mockFn(mockRepo, mockTx)
-
-			// Act
+			// Register Usecase
 			result, err := uc.Register(context.Background(), tc.input)
 
-			// Assert
 			if tc.expectedErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tc.expectedErr) || err.Error() == tc.expectedErr.Error())
@@ -122,96 +92,72 @@ func TestLoginUsecase(t *testing.T) {
 	type testCase struct {
 		name        string
 		input       *user.User
-		mockFn      func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager)
+		mockFn      func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name:  "fail wrong password",
-			input: &user.User{Email: "user@example.com", Password: "wrong_password"},
-			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager) {
-				hashedPassword, _ := password.HashedPassword("correct_password")
-				mockUser := &user.User{
-					ID:       1,
-					Email:    "user@example.com",
-					Password: hashedPassword,
-				}
-
-				mockRepo.EXPECT().FindByEmail(gomock.Any(), "user@example.com").Return(mockUser, nil).Times(1)
-			},
-			expectedErr: errs.ErrUserCredentials,
-		},
-		{
-			name:  "success ok",
+			name:  "success",
 			input: &user.User{Email: "user@example.com", Password: "correct_password"},
-			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager) {
-				hashedPassword, _ := password.HashedPassword("correct_password")
-				mockUser := &user.User{
-					ID:       1,
-					Email:    "user@example.com",
-					Password: hashedPassword,
-				}
+			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User) {
+				hashedPassword, _ := password.HashedPassword(input.Password)
+				u := mockUserData()
+				u.Email = input.Email
+				u.Password = hashedPassword
 
-				mockRepo.EXPECT().FindByEmail(gomock.Any(), "user@example.com").Return(mockUser, nil).Times(1)
+				mockRepo.EXPECT().FindByEmail(gomock.Any(), input.Email).Return(u, nil).Times(1)
 
 				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(nil).Times(1)
 			},
 			expectedErr: nil,
 		},
 		{
-			name:  "fail save token",
-			input: &user.User{Email: "user@example.com", Password: "correct_password"},
-			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager) {
-				hashedPassword, _ := password.HashedPassword("correct_password")
-				mockUser := &user.User{
-					ID:       1,
-					Email:    "user@example.com",
-					Password: hashedPassword,
-				}
+			name:  "fail wrong password",
+			input: &user.User{Email: "user@example.com", Password: "wrong_password"},
+			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User) {
+				u := mockUserData()
+				mockRepo.EXPECT().FindByEmail(gomock.Any(), input.Email).Return(u, nil).Times(1)
 
-				mockRepo.EXPECT().FindByEmail(gomock.Any(), "user@example.com").Return(mockUser, nil).Times(1)
-
-				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(errors.New("DB connection error")).Times(1)
+				hashedPassword, _ := password.HashedPassword(u.Password)
+				password.ComparePassword(hashedPassword, input.Password)
 			},
-			expectedErr: errors.New("DB connection error"),
+			expectedErr: errs.ErrUserCredentials,
+		},
+		{
+			name:  "fail email not found",
+			input: &user.User{Email: "user2@example.com", Password: "password"},
+			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User) {
+				mockRepo.EXPECT().FindByEmail(gomock.Any(), input.Email).Return(nil, errs.ErrUserNotFound).Times(1)
+			},
+			expectedErr: errs.ErrUserCredentials,
+		},
+		{
+			name:  "fail save token",
+			input: &user.User{Email: "user@example.com", Password: "password"},
+			mockFn: func(mockRepo *userrepository.MockUserRepository, mockTx *mockTxManager, input *user.User) {
+				hashedPassword, _ := password.HashedPassword(input.Password)
+				u := mockUserData()
+				u.Password = hashedPassword
+
+				mockRepo.EXPECT().FindByEmail(gomock.Any(), input.Email).Return(u, nil).Times(1)
+
+				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(errDBMock).Times(1)
+			},
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			// Setup
+			uc, mockRepo, mockTx := setup(t)
 
-			// Dependencies
-			mockRepo := userrepository.NewMockUserRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockToken, err := jwt.InitJWT(config.JWTConfig{
-				SecretKey:  "mock_secret_key",
-				RefreshKey: "mock_refresh_key",
-			})
-			if err != nil {
-				t.Fatalf("InitJWT failed: %v", err)
-			}
+			tc.mockFn(mockRepo, mockTx, tc.input)
 
-			// New User Usecase
-			uc, err := userusecase.NewUserUsecase(&userusecase.UserUsecaseConfig{
-				Repo:  mockRepo,
-				Token: mockToken,
-				Tx:    mockTx,
-				DB:    nil,
-			})
-			if err != nil {
-				t.Fatalf("NewUserUsecase failed: %v", err)
-			}
-
-			// Mock Repo Response
-			tc.mockFn(mockRepo, mockTx)
-
-			// Act
+			// Login Usecase
 			result, err := uc.Login(context.Background(), tc.input)
 
-			// Assert
 			if tc.expectedErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tc.expectedErr) || err.Error() == tc.expectedErr.Error())
@@ -229,27 +175,22 @@ func TestLoginUsecase(t *testing.T) {
 func TestRefreshTokenUsecase(t *testing.T) {
 	type testCase struct {
 		name        string
-		input       string
-		mockFn      func(mockRepo *userrepository.MockUserRepository)
+		token       string
+		mockFn      func(mockRepo *userrepository.MockUserRepository, token string)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name:  "success refresh token",
-			input: "mock_refresh_token",
-			mockFn: func(mockRepo *userrepository.MockUserRepository) {
-				var userID int64 = 1
-				mockToken := "mock_refresh_token"
-				mockRepo.EXPECT().ValidateRefreshToken(gomock.Any(), mockToken).Return(userID, nil).Times(1)
+			name:  "success",
+			token: "mock_refresh_token",
+			mockFn: func(mockRepo *userrepository.MockUserRepository, token string) {
+				u := mockUserData()
+				mockRepo.EXPECT().ValidateRefreshToken(gomock.Any(), token).Return(u.ID, nil).Times(1)
 
-				mockUser := &user.User{
-					ID:    1,
-					Email: "user@example.com",
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), userID).Return(mockUser, nil).Times(1)
+				mockRepo.EXPECT().FindByID(gomock.Any(), u.ID).Return(u, nil).Times(1)
 
-				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), mockToken).Return(nil).Times(1)
+				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), token).Return(nil).Times(1)
 
 				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(nil).Times(1)
 			},
@@ -257,70 +198,42 @@ func TestRefreshTokenUsecase(t *testing.T) {
 		},
 		{
 			name:  "fail user not found",
-			input: "mock_refresh_token",
-			mockFn: func(mockRepo *userrepository.MockUserRepository) {
-				var userID int64 = 1
-				mockToken := "mock_refresh_token"
-				mockRepo.EXPECT().ValidateRefreshToken(gomock.Any(), mockToken).Return(userID, nil).Times(1)
+			token: "mock_refresh_token",
+			mockFn: func(mockRepo *userrepository.MockUserRepository, token string) {
+				u := mockUserData()
+				mockRepo.EXPECT().ValidateRefreshToken(gomock.Any(), token).Return(u.ID, nil).Times(1)
 
-				mockRepo.EXPECT().FindByID(gomock.Any(), userID).Return(nil, errs.ErrUserNotFound).Times(1)
+				mockRepo.EXPECT().FindByID(gomock.Any(), u.ID).Return(nil, errs.ErrUserNotFound).Times(1)
 			},
 			expectedErr: errs.ErrUserNotFound,
 		},
 		{
 			name:  "fail save token",
-			input: "mock_refresh_token",
-			mockFn: func(mockRepo *userrepository.MockUserRepository) {
-				var userID int64 = 1
-				mockToken := "mock_refresh_token"
-				mockRepo.EXPECT().ValidateRefreshToken(gomock.Any(), mockToken).Return(userID, nil).Times(1)
+			token: "mock_refresh_token",
+			mockFn: func(mockRepo *userrepository.MockUserRepository, token string) {
+				u := mockUserData()
+				mockRepo.EXPECT().ValidateRefreshToken(gomock.Any(), token).Return(u.ID, nil).Times(1)
 
-				mockUser := &user.User{
-					ID:    1,
-					Email: "user@example.com",
-				}
-				mockRepo.EXPECT().FindByID(gomock.Any(), userID).Return(mockUser, nil).Times(1)
+				mockRepo.EXPECT().FindByID(gomock.Any(), u.ID).Return(u, nil).Times(1)
 
-				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), mockToken).Return(nil).Times(1)
+				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), token).Return(nil).Times(1)
 
-				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(errors.New("db error")).Times(1)
+				mockRepo.EXPECT().SaveRefreshToken(gomock.Any(), nil, gomock.Any()).Return(errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			// Setup
+			uc, mockRepo, _ := setup(t)
 
-			// Dependencies
-			mockRepo := userrepository.NewMockUserRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockToken, err := jwt.InitJWT(config.JWTConfig{
-				SecretKey:  "mock_secret_key",
-				RefreshKey: "mock_refresh_key",
-			})
-			if err != nil {
-				t.Fatalf("InitJWT failed: %v", err)
-			}
+			tc.mockFn(mockRepo, tc.token)
 
-			// New User Usecase
-			uc, err := userusecase.NewUserUsecase(&userusecase.UserUsecaseConfig{
-				Repo:  mockRepo,
-				Token: mockToken,
-				Tx:    mockTx,
-				DB:    nil,
-			})
-			if err != nil {
-				t.Fatalf("NewUserUsecase failed: %v", err)
-			}
+			// RefreshToken Usecase
+			result, err := uc.RefreshToken(context.Background(), tc.token)
 
-			tc.mockFn(mockRepo)
-
-			result, err := uc.RefreshToken(context.Background(), tc.input)
-
-			// Assert
 			if tc.expectedErr != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tc.expectedErr) || err.Error() == tc.expectedErr.Error())
@@ -338,68 +251,47 @@ func TestRefreshTokenUsecase(t *testing.T) {
 func TestLogoutUsecase(t *testing.T) {
 	type testCase struct {
 		name        string
-		input       string
-		mockFn      func(mockRepo *userrepository.MockUserRepository)
+		token       string
+		mockFn      func(mockRepo *userrepository.MockUserRepository, token string)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name:  "success revoked token",
-			input: "mock_refresh_token",
-			mockFn: func(mockRepo *userrepository.MockUserRepository) {
-				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), "mock_refresh_token").Return(nil).Times(1)
+			name:  "success",
+			token: "mock_refresh_token",
+			mockFn: func(mockRepo *userrepository.MockUserRepository, token string) {
+				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), token).Return(nil).Times(1)
 			},
 			expectedErr: nil,
 		},
 		{
 			name:  "fail token not found",
-			input: "mock_refresh_token",
-			mockFn: func(mockRepo *userrepository.MockUserRepository) {
-				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), "mock_refresh_token").Return(errs.ErrTokenNotFound).Times(1)
+			token: "mock_refresh_token",
+			mockFn: func(mockRepo *userrepository.MockUserRepository, token string) {
+				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), token).Return(errs.ErrTokenNotFound).Times(1)
 			},
 			expectedErr: errs.ErrTokenNotFound,
 		},
 		{
 			name:  "fail revoked token",
-			input: "mock_refresh_token",
-			mockFn: func(mockRepo *userrepository.MockUserRepository) {
-				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), "mock_refresh_token").Return(errors.New("db error")).Times(1)
+			token: "mock_refresh_token",
+			mockFn: func(mockRepo *userrepository.MockUserRepository, token string) {
+				mockRepo.EXPECT().RevokedRefreshToken(gomock.Any(), gomock.Any(), token).Return(errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			// Setup
+			uc, mockRepo, _ := setup(t)
 
-			// Dependencies
-			mockRepo := userrepository.NewMockUserRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockToken, err := jwt.InitJWT(config.JWTConfig{
-				SecretKey:  "mock_secret_key",
-				RefreshKey: "mock_refresh_key",
-			})
-			if err != nil {
-				t.Fatalf("InitJWT failed: %v", err)
-			}
+			tc.mockFn(mockRepo, tc.token)
 
-			// New User Usecase
-			uc, err := userusecase.NewUserUsecase(&userusecase.UserUsecaseConfig{
-				Repo:  mockRepo,
-				Token: mockToken,
-				Tx:    mockTx,
-				DB:    nil,
-			})
-			if err != nil {
-				t.Fatalf("NewUserUsecase failed: %v", err)
-			}
-
-			tc.mockFn(mockRepo)
-
-			err = uc.Logout(context.Background(), tc.input)
+			// Logout Usecase
+			err := uc.Logout(context.Background(), tc.token)
 
 			if tc.expectedErr != nil {
 				assert.Error(t, err)
@@ -410,3 +302,85 @@ func TestLogoutUsecase(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUser(t *testing.T) {
+	type testCase struct {
+		name        string
+		userID      int64
+		mockFn      func(mockRepo *userrepository.MockUserRepository, userID int64)
+		expectedErr error
+	}
+
+	testCases := []testCase{
+		{
+			name:   "success",
+			userID: 10,
+			mockFn: func(mockRepo *userrepository.MockUserRepository, userID int64) {
+				u := mockUserData()
+				mockRepo.EXPECT().FindByID(gomock.Any(), userID).Return(u, nil).Times(1)
+			},
+			expectedErr: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup
+			uc, mockRepo, _ := setup(t)
+
+			tc.mockFn(mockRepo, tc.userID)
+
+			// GetUser Usecase
+			result, err := uc.GetUser(context.Background(), tc.userID)
+
+			if tc.expectedErr != nil {
+				assert.Error(t, err)
+				assert.True(t, errors.Is(err, tc.expectedErr) || err.Error() == tc.expectedErr.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+			}
+		})
+	}
+}
+
+// ================= Helper ======================
+// -----------------------------------------------
+func setup(t *testing.T) (userusecase.UserUsecase, *userrepository.MockUserRepository, *mockTxManager) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := userrepository.NewMockUserRepository(ctrl)
+	mockTx := &mockTxManager{}
+	mockToken, err := jwt.InitJWT(config.JWTConfig{
+		SecretKey:  "mock_secret_key",
+		RefreshKey: "mock_refresh_key",
+	})
+	if err != nil {
+		t.Fatalf("init jwt failed: %v", err)
+	}
+
+	uc, err := userusecase.NewUserUsecase(&userusecase.UserUsecaseConfig{
+		Repo:  mockRepo,
+		Token: mockToken,
+		Tx:    mockTx,
+	})
+	if err != nil {
+		t.Fatalf("user usecase failed: %v", err)
+	}
+
+	return uc, mockRepo, mockTx
+}
+
+func mockUserData() *user.User {
+	return &user.User{
+		ID:       10,
+		Email:    "example@mail.com",
+		Password: "example_password",
+		Role:     "user",
+	}
+}
+
+var errDBMock = errors.New("database error")
