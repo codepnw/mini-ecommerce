@@ -96,7 +96,7 @@ func (h *userHandler) RefreshToken(c *gin.Context) {
 			response.Unauthorized(c, err.Error())
 			return
 		case errs.ErrTokenNotFound:
-			response.Unauthorized(c, err.Error())
+			response.NotFound(c, err.Error())
 			return
 		default:
 			response.InternalServerError(c, err)
@@ -118,6 +118,10 @@ func (h *userHandler) Logout(c *gin.Context) {
 	}
 
 	if err := h.uc.Logout(c, req.RefreshToken); err != nil {
+		if errors.Is(err, errs.ErrTokenNotFound) {
+			response.NotFound(c, err.Error())
+			return
+		}
 		response.InternalServerError(c, err)
 		return
 	}
