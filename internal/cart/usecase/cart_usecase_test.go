@@ -12,6 +12,8 @@ import (
 	"github.com/codepnw/mini-ecommerce/internal/product"
 	productrepository "github.com/codepnw/mini-ecommerce/internal/product/repository"
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
+	"github.com/codepnw/mini-ecommerce/pkg/auth"
+	"github.com/codepnw/mini-ecommerce/pkg/jwt"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,9 +29,11 @@ type mockDB struct{}
 func (m *mockDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	return nil
 }
+
 func (m *mockDB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	return nil, nil
 }
+
 func (m *mockDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return nil, nil
 }
@@ -39,7 +43,7 @@ func TestAddItemToCart(t *testing.T) {
 		name        string
 		productID   int64
 		quantity    int
-		mockFn      func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager)
+		mockFn      func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, productID int64, quantity int)
 		expectedErr error
 	}
 
@@ -48,28 +52,19 @@ func TestAddItemToCart(t *testing.T) {
 			name:      "success",
 			productID: 101,
 			quantity:  3,
-			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockProd := &product.Product{
-					ID:    101,
-					Stock: 10,
-				}
-				mockProdRepo.EXPECT().FindByID(gomock.Any(), int64(101)).Return(mockProd, nil).Times(1)
+			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, productID int64, quantity int) {
+				p := mockProduct()
+				mockProdRepo.EXPECT().FindByID(gomock.Any(), p.ID).Return(p, nil).Times(1)
 
-				mockCart := &cart.Cart{
-					CartID: "uuid-001",
-				}
-				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
+				c := mockCart()
+				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil).Times(1)
 
 				mockCartRepo.EXPECT().UpsertItem(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 				// Return getCartView
 				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
-				mockItems := []*cartrepository.CartItemDB{
-					{CartItemID: "uuid-cart-item-001"},
-					{CartItemID: "uuid-cart-item-002"},
-					{CartItemID: "uuid-cart-item-003"},
-				}
-				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), "uuid-001").Return(mockItems, nil).Times(1)
+				ci := mockCartItems()
+				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), c.ID).Return(ci, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -77,7 +72,7 @@ func TestAddItemToCart(t *testing.T) {
 			name:      "fail - product not found",
 			productID: 101,
 			quantity:  3,
-			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
+			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, productID int64, quantity int) {
 				mockProdRepo.EXPECT().FindByID(gomock.Any(), int64(101)).Return(nil, errs.ErrProductNotFound).Times(1)
 			},
 			expectedErr: errs.ErrProductNotFound,
@@ -86,12 +81,9 @@ func TestAddItemToCart(t *testing.T) {
 			name:      "fail - product not enough",
 			productID: 101,
 			quantity:  5,
-			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockProd := &product.Product{
-					ID:    101,
-					Stock: 1,
-				}
-				mockProdRepo.EXPECT().FindByID(gomock.Any(), int64(101)).Return(mockProd, nil).Times(1)
+			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, productID int64, quantity int) {
+				p := mockProduct()
+				mockProdRepo.EXPECT().FindByID(gomock.Any(), p.ID).Return(p, nil).Times(1)
 			},
 			expectedErr: errs.ErrProductNotEnough,
 		},
@@ -99,7 +91,7 @@ func TestAddItemToCart(t *testing.T) {
 			name:      "fail - db get or create cart",
 			productID: 101,
 			quantity:  5,
-			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
+			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, productID int64, quantity int) {
 				mockProd := &product.Product{
 					ID:    101,
 					Stock: 10,
@@ -114,17 +106,9 @@ func TestAddItemToCart(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			uc, mockCartRepo, mockProdRepo, _ := setup(t)
 
-			mockCartRepo := cartrepository.NewMockCartRepository(ctrl)
-			mockProdRepo := productrepository.NewMockProductRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockDB := &mockDB{}
-
-			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx, mockDB)
-
-			tc.mockFn(mockCartRepo, mockProdRepo, mockTx)
+			tc.mockFn(mockCartRepo, mockProdRepo, tc.productID, tc.quantity)
 
 			result, err := uc.AddItemToCart(context.Background(), tc.productID, tc.quantity)
 
@@ -154,25 +138,21 @@ func TestUpdateItemQuantity(t *testing.T) {
 			cartItemID:  101,
 			newQuantity: 3,
 			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockCart := &cart.Cart{CartID: "uuid-001"}
-				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
+				c := mockCart()
+				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil).Times(1)
 
 				mockItem := &cart.CartItem{ID: 101, ProductID: 100}
-				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), mockCart.CartID).Return(mockItem, nil).Times(1)
+				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), c.ID).Return(mockItem, nil).Times(1)
 
-				mockProd := &product.Product{ID: 100, Stock: 10}
-				mockProdRepo.EXPECT().FindByIDForUpdate(gomock.Any(), gomock.Any(), int64(100)).Return(mockProd, nil).Times(1)
+				p := mockProduct()
+				mockProdRepo.EXPECT().FindByIDForUpdate(gomock.Any(), gomock.Any(), int64(100)).Return(p, nil).Times(1)
 
-				mockCartRepo.EXPECT().UpdateItemQuantity(gomock.Any(), gomock.Any(), mockCart.CartID, int64(101), 3).Return(nil).Times(1)
+				mockCartRepo.EXPECT().UpdateItemQuantity(gomock.Any(), gomock.Any(), c.ID, int64(101), 3).Return(nil).Times(1)
 
 				// Return getCartView
-				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
-				mockItems := []*cartrepository.CartItemDB{
-					{CartItemID: "uuid-cart-item-001"},
-					{CartItemID: "uuid-cart-item-002"},
-					{CartItemID: "uuid-cart-item-003"},
-				}
-				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
+				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil).Times(1)
+				ci := mockCartItems()
+				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), c.ID).Return(ci, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -190,10 +170,10 @@ func TestUpdateItemQuantity(t *testing.T) {
 			cartItemID:  101,
 			newQuantity: 3,
 			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockCart := &cart.Cart{CartID: "uuid-001"}
+				mockCart := &cart.Cart{ID: "uuid-001"}
 				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
 
-				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), mockCart.CartID).Return(nil, errs.ErrItemNotInCart).Times(1)
+				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), mockCart.ID).Return(nil, errs.ErrItemNotInCart).Times(1)
 			},
 			expectedErr: errs.ErrItemNotInCart,
 		},
@@ -202,29 +182,29 @@ func TestUpdateItemQuantity(t *testing.T) {
 			cartItemID:  101,
 			newQuantity: 3,
 			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockCart := &cart.Cart{CartID: "uuid-001"}
+				mockCart := &cart.Cart{ID: "uuid-001"}
 				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
 
 				mockItem := &cart.CartItem{ID: 101, ProductID: 100}
-				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), mockCart.CartID).Return(mockItem, nil).Times(1)
+				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), mockCart.ID).Return(mockItem, nil).Times(1)
 
 				mockProdRepo.EXPECT().FindByIDForUpdate(gomock.Any(), gomock.Any(), int64(100)).Return(nil, errs.ErrProductNotFound).Times(1)
 			},
 			expectedErr: errs.ErrProductNotFound,
 		},
 		{
-			name:        "",
+			name:        "fail product not enough",
 			cartItemID:  101,
 			newQuantity: 12,
 			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockCart := &cart.Cart{CartID: "uuid-001"}
-				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
+				c := mockCart()
+				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil).Times(1)
 
 				mockItem := &cart.CartItem{ID: 101, ProductID: 100}
-				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), mockCart.CartID).Return(mockItem, nil).Times(1)
+				mockCartRepo.EXPECT().GetCartItemForUpdate(gomock.Any(), gomock.Any(), int64(101), c.ID).Return(mockItem, nil).Times(1)
 
-				mockProd := &product.Product{ID: 100, Stock: 10}
-				mockProdRepo.EXPECT().FindByIDForUpdate(gomock.Any(), gomock.Any(), int64(100)).Return(mockProd, nil).Times(1)
+				p := mockProduct()
+				mockProdRepo.EXPECT().FindByIDForUpdate(gomock.Any(), gomock.Any(), int64(100)).Return(p, nil).Times(1)
 			},
 			expectedErr: errs.ErrProductNotEnough,
 		},
@@ -232,15 +212,7 @@ func TestUpdateItemQuantity(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockCartRepo := cartrepository.NewMockCartRepository(ctrl)
-			mockProdRepo := productrepository.NewMockProductRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockDB := &mockDB{}
-
-			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx, mockDB)
+			uc, mockCartRepo, mockProdRepo, mockTx := setup(t)
 
 			tc.mockFn(mockCartRepo, mockProdRepo, mockTx)
 
@@ -261,7 +233,7 @@ func TestRemoveItemFromCart(t *testing.T) {
 	type testCase struct {
 		name        string
 		cartItemID  int64
-		mockFn      func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager)
+		mockFn      func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager, cartItemID int64)
 		expectedErr error
 	}
 
@@ -269,50 +241,41 @@ func TestRemoveItemFromCart(t *testing.T) {
 		{
 			name:       "success",
 			cartItemID: 100,
-			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockCart := &cart.Cart{CartID: "uuid-001"}
-				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
+			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager, cartItemID int64) {
+				c := mockCart()
+				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil).Times(1)
 
-				mockCartRepo.EXPECT().RemoveItem(gomock.Any(), gomock.Any(), mockCart.CartID, int64(100)).Return(nil).Times(1)
+				mockCartRepo.EXPECT().RemoveItem(gomock.Any(), gomock.Any(), c.ID, cartItemID).Return(nil).Times(1)
 
 				// Return getCartView
-				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
-				mockItems := []*cartrepository.CartItemDB{
-					{CartItemID: "uuid-cart-item-001"},
-					{CartItemID: "uuid-cart-item-002"},
-					{CartItemID: "uuid-cart-item-003"},
-				}
-				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
+				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil).Times(1)
+				ci := mockCartItems()
+				mockCartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), c.ID).Return(ci, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
 		{
-			name:       "fail - remove item",
+			name:       "fail remove item",
 			cartItemID: 100,
-			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager) {
-				mockCart := &cart.Cart{CartID: "uuid-001"}
-				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockCart, nil).Times(1)
+			mockFn: func(mockCartRepo *cartrepository.MockCartRepository, mockProdRepo *productrepository.MockProductRepository, mockTx *mockTxManager, cartItemID int64) {
+				c := mockCart()
+				mockCartRepo.EXPECT().GetOrCreateActiveCart(gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil).Times(1)
 
-				mockCartRepo.EXPECT().RemoveItem(gomock.Any(), gomock.Any(), mockCart.CartID, int64(100)).Return(errors.New("db error")).Times(1)
+				mockCartRepo.EXPECT().RemoveItem(gomock.Any(), gomock.Any(), c.ID, cartItemID).Return(errDBMock).Times(1)
 			},
-			expectedErr: errors.New("db error"),
+			expectedErr: errDBMock,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			// Setup
+			uc, mockCartRepo, mockProdRepo, mockTx := setup(t)
+			// ctx := mockUser()
 
-			mockCartRepo := cartrepository.NewMockCartRepository(ctrl)
-			mockProdRepo := productrepository.NewMockProductRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockDB := &mockDB{}
+			tc.mockFn(mockCartRepo, mockProdRepo, mockTx, tc.cartItemID)
 
-			uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx, mockDB)
-
-			tc.mockFn(mockCartRepo, mockProdRepo, mockTx)
-
+			// RemoveItem Usecase
 			result, err := uc.RemoveItemFromCart(context.Background(), tc.cartItemID)
 
 			if tc.expectedErr != nil {
@@ -325,3 +288,47 @@ func TestRemoveItemFromCart(t *testing.T) {
 		})
 	}
 }
+
+// =================== Helper ==============
+// -----------------------------------------
+func setup(t *testing.T) (cartusecase.CartUsecase, *cartrepository.MockCartRepository, *productrepository.MockProductRepository, *mockTxManager) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCartRepo := cartrepository.NewMockCartRepository(ctrl)
+	mockProdRepo := productrepository.NewMockProductRepository(ctrl)
+	mockTx := &mockTxManager{}
+	mockDB := &mockDB{}
+
+	uc := cartusecase.NewCartUsecase(mockCartRepo, mockProdRepo, mockTx, mockDB)
+	return uc, mockCartRepo, mockProdRepo, mockTx
+}
+
+func mockUser() context.Context {
+	userClaims := &jwt.UserClaims{
+		ID:    10,
+		Email: "example@mail.com",
+		Role:  "user",
+	}
+	return auth.SetCurrentUser(context.Background(), userClaims)
+}
+
+func mockProduct() *product.Product {
+	return &product.Product{ID: 101, Stock: 20}
+}
+
+func mockCart() *cart.Cart {
+	return &cart.Cart{ID: "uuid-cart-id"}
+}
+
+func mockCartItems() []*cartrepository.CartItemDB {
+	return []*cartrepository.CartItemDB{
+		{CartItemID: 100},
+		{CartItemID: 101},
+		{CartItemID: 102},
+	}
+}
+
+var errDBMock = errors.New("db error")

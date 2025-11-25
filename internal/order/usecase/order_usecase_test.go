@@ -54,14 +54,14 @@ func TestCreateOrder(t *testing.T) {
 			name:   "success",
 			userID: 10,
 			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockCart := &cart.Cart{CartID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
+				mockCart := &cart.Cart{ID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
 				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), int64(10)).Return(mockCart, nil).Times(1)
 
 				mockItems := []*cartrepository.CartItemDB{
-					{CartItemID: "item-001", ProductID: 1, Price: 100, Quantity: 2},
-					{CartItemID: "item-002", ProductID: 2, Price: 80, Quantity: 2},
+					{CartItemID: 100, ProductID: 1, Price: 100, Quantity: 2},
+					{CartItemID: 101, ProductID: 2, Price: 80, Quantity: 2},
 				}
-				cartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
+				cartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.ID).Return(mockItems, nil).Times(1)
 
 				var expectedTotal float64
 
@@ -95,7 +95,7 @@ func TestCreateOrder(t *testing.T) {
 
 					prodRepo.EXPECT().DecreaseStock(gomock.Any(), gomock.Any(), i.ProductID, i.Quantity).Return(nil).Times(1)
 				}
-				cartRepo.EXPECT().ClearCart(gomock.Any(), gomock.Any(), mockCart.CartID).Return(nil).Times(1)
+				cartRepo.EXPECT().ClearCart(gomock.Any(), gomock.Any(), mockCart.ID).Return(nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -103,13 +103,13 @@ func TestCreateOrder(t *testing.T) {
 			name:   "fail product not enough",
 			userID: 10,
 			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockCart := &cart.Cart{CartID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
+				mockCart := &cart.Cart{ID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
 				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), int64(10)).Return(mockCart, nil).Times(1)
 
 				mockItems := []*cartrepository.CartItemDB{
-					{CartItemID: "item-001", ProductID: 1, Price: 100, Quantity: 2},
+					{CartItemID: 100, ProductID: 1, Price: 100, Quantity: 2},
 				}
-				cartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
+				cartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.ID).Return(mockItems, nil).Times(1)
 
 				for _, i := range mockItems {
 					mockProduct := &product.Product{
@@ -126,14 +126,14 @@ func TestCreateOrder(t *testing.T) {
 			name:   "fail db error",
 			userID: 10,
 			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockCart := &cart.Cart{CartID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
+				mockCart := &cart.Cart{ID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
 				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), int64(10)).Return(mockCart, nil).Times(1)
 
 				mockItems := []*cartrepository.CartItemDB{
-					{CartItemID: "item-001", ProductID: 1, Price: 100, Quantity: 2},
-					{CartItemID: "item-002", ProductID: 2, Price: 80, Quantity: 2},
+					{CartItemID: 100, ProductID: 1, Price: 100, Quantity: 2},
+					{CartItemID: 101, ProductID: 2, Price: 80, Quantity: 2},
 				}
-				cartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.CartID).Return(mockItems, nil).Times(1)
+				cartRepo.EXPECT().GetCartItems(gomock.Any(), gomock.Any(), mockCart.ID).Return(mockItems, nil).Times(1)
 
 				var expectedTotal float64
 
@@ -167,7 +167,7 @@ func TestCreateOrder(t *testing.T) {
 
 					prodRepo.EXPECT().DecreaseStock(gomock.Any(), gomock.Any(), i.ProductID, i.Quantity).Return(nil).Times(1)
 				}
-				cartRepo.EXPECT().ClearCart(gomock.Any(), gomock.Any(), mockCart.CartID).Return(errors.New("db error")).Times(1)
+				cartRepo.EXPECT().ClearCart(gomock.Any(), gomock.Any(), mockCart.ID).Return(errors.New("db error")).Times(1)
 			},
 			expectedErr: errors.New("db error"),
 		},

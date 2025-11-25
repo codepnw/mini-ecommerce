@@ -15,7 +15,7 @@ const (
 )
 
 type Cart struct {
-	CartID    string         `json:"cart_id"`
+	ID        string         `json:"id"`
 	UserID    sql.NullInt64  `json:"user_id"`
 	SessionID sql.NullString `json:"sesstion_id"`
 	Status    status         `json:"status"`

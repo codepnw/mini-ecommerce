@@ -62,7 +62,7 @@ func (u *orderUsecase) CreateOrder(ctx context.Context) (*order.Order, error) {
 			return err
 		}
 
-		items, err := u.cartRepo.GetCartItems(ctx, tx, cartData.CartID)
+		items, err := u.cartRepo.GetCartItems(ctx, tx, cartData.ID)
 		if err != nil {
 			return err
 		}
@@ -124,7 +124,7 @@ func (u *orderUsecase) CreateOrder(ctx context.Context) (*order.Order, error) {
 			}
 		}
 		// Clear Cart
-		if err := u.cartRepo.ClearCart(ctx, tx, cartData.CartID); err != nil {
+		if err := u.cartRepo.ClearCart(ctx, tx, cartData.ID); err != nil {
 			return err
 		}
 		return nil

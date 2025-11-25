@@ -68,7 +68,7 @@ func (u *cartUsecase) AddItemToCart(ctx context.Context, productID int64, quanti
 	// Upsert Item
 	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		item := &cart.CartItem{
-			CartID:     cartData.CartID,
+			CartID:     cartData.ID,
 			ProductID:  productID,
 			Quantity:   quantity,
 			PriceAtAdd: product.Price,
@@ -79,14 +79,13 @@ func (u *cartUsecase) AddItemToCart(ctx context.Context, productID int64, quanti
 		return nil, err
 	}
 
-	// TODO: Clear Cache (Redis)
 	return u.getCartView(ctx)
 }
 
 type CartItemView struct {
-	CartItemID string `json:"cart_item_id"`
-	ProductID  int64  `json:"product_id"`
-	Quantity   int    `json:"quantity"`
+	CartItemID int64 `json:"cart_item_id"`
+	ProductID  int64 `json:"product_id"`
+	Quantity   int   `json:"quantity"`
 	// From Products
 	Name  string  `json:"name"`
 	Price float64 `json:"price"`
@@ -111,7 +110,6 @@ func (u *cartUsecase) GetCart(ctx context.Context) (*CartView, error) {
 	ctx, cancel := context.WithTimeout(ctx, consts.ContextTimeout)
 	defer cancel()
 
-	// TODO: Create Cache
 	return u.getCartView(ctx)
 }
 
@@ -128,7 +126,7 @@ func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
 	}
 
 	// Get Items
-	items, err := u.cartRepo.GetCartItems(ctx, u.db, cartData.CartID)
+	items, err := u.cartRepo.GetCartItems(ctx, u.db, cartData.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +179,7 @@ func (u *cartUsecase) getCartView(ctx context.Context) (*CartView, error) {
 	}
 
 	return &CartView{
-		CartID:     cartData.CartID,
+		CartID:     cartData.ID,
 		UserID:     finalUserID,
 		Items:      finalItems,
 		TotalPrice: totalPrice,
@@ -211,7 +209,7 @@ func (u *cartUsecase) UpdateItemQuantity(ctx context.Context, cartItemID int64, 
 
 	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
 		// Item Detail
-		item, err := u.cartRepo.GetCartItemForUpdate(ctx, tx, cartItemID, cartData.CartID)
+		item, err := u.cartRepo.GetCartItemForUpdate(ctx, tx, cartItemID, cartData.ID)
 		if err != nil {
 			return errs.ErrItemNotInCart
 		}
@@ -227,13 +225,12 @@ func (u *cartUsecase) UpdateItemQuantity(ctx context.Context, cartItemID int64, 
 			return errs.ErrProductNotEnough
 		}
 
-		return u.cartRepo.UpdateItemQuantity(ctx, tx, cartData.CartID, cartItemID, newQuantity)
+		return u.cartRepo.UpdateItemQuantity(ctx, tx, cartData.ID, cartItemID, newQuantity)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Clear Cache
 	return u.getCartView(ctx)
 }
 
@@ -252,7 +249,7 @@ func (u *cartUsecase) RemoveItemFromCart(ctx context.Context, cartItemID int64) 
 	}
 
 	err = u.tx.WithTransaction(ctx, func(tx *sql.Tx) error {
-		return u.cartRepo.RemoveItem(ctx, tx, cartData.CartID, cartItemID)
+		return u.cartRepo.RemoveItem(ctx, tx, cartData.ID, cartItemID)
 	})
 	if err != nil {
 		return nil, err

@@ -14,12 +14,16 @@ import (
 
 type CartRepository interface {
 	GetOrCreateActiveCart(ctx context.Context, userID sql.NullInt64, sessionID sql.NullString) (*cart.Cart, error)
-	UpsertItem(ctx context.Context, tx *sql.Tx, item *cart.CartItem) error
-	GetCartItems(ctx context.Context, exec database.DBExec, cartID string) ([]*CartItemDB, error)
-	UpdateItemQuantity(ctx context.Context, tx *sql.Tx, cartID string, cartItemID int64, quantity int) error
-	RemoveItem(ctx context.Context, tx *sql.Tx, cartID string, cartItemID int64) error
-	ClearCart(ctx context.Context, exec database.DBExec, cartID string) error
 	GetCartItemDetails(ctx context.Context, cartItemID int64, cartID string) (*cart.CartItem, error)
+
+	// DB or Tx
+	GetCartItems(ctx context.Context, exec database.DBExec, cartID string) ([]*CartItemDB, error)
+	ClearCart(ctx context.Context, exec database.DBExec, cartID string) error
+
+	// Transaction
+	UpdateItemQuantity(ctx context.Context, tx *sql.Tx, cartID string, cartItemID int64, quantity int) error
+	UpsertItem(ctx context.Context, tx *sql.Tx, item *cart.CartItem) error
+	RemoveItem(ctx context.Context, tx *sql.Tx, cartID string, cartItemID int64) error
 	GetCartItemForUpdate(ctx context.Context, tx *sql.Tx, cartItemID int64, cartID string) (*cart.CartItem, error)
 	GetActiveCartByUserID(ctx context.Context, tx *sql.Tx, userID int64) (*cart.Cart, error)
 }
@@ -38,15 +42,15 @@ func (r *cartRepository) GetOrCreateActiveCart(ctx context.Context, userID sql.N
 	c := new(cart.Cart)
 
 	if userID.Valid {
-		query = `SELECT cart_id, user_id, session_id, status FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1`
+		query = `SELECT id, user_id, session_id, status FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1`
 		args = append(args, userID.Int64)
 	} else {
-		query = `SELECT cart_id, user_id, session_id, status FROM carts WHERE session_id = $1 AND status = 'guest' LIMIT 1`
+		query = `SELECT id, user_id, session_id, status FROM carts WHERE session_id = $1 AND status = 'guest' LIMIT 1`
 		args = append(args, sessionID.String)
 	}
 
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(
-		&c.CartID,
+		&c.ID,
 		&c.UserID,
 		&c.SessionID,
 		&c.Status,
@@ -65,16 +69,16 @@ func (r *cartRepository) GetOrCreateActiveCart(ctx context.Context, userID sql.N
 	var insertArgs []any
 
 	if userID.Valid {
-		insertQuery = `INSERT INTO carts (user_id, status) VALUES ($1, 'active') RETURNING cart_id, user_id, session_id, status`
+		insertQuery = `INSERT INTO carts (user_id, status) VALUES ($1, 'active') RETURNING id, user_id, session_id, status`
 		insertArgs = append(insertArgs, userID.Int64)
 	} else {
-		insertQuery = `INSERT INTO carts (session_id, status) VALUES ($1, 'guest') RETURNING cart_id, user_id, session_id, status`
-		insertArgs = append(insertArgs, sessionID)
+		insertQuery = `INSERT INTO carts (session_id, status) VALUES ($1, 'guest') RETURNING id, user_id, session_id, status`
+		insertArgs = append(insertArgs, sessionID.String)
 	}
 
 	newCart := new(cart.Cart)
 	err = r.db.QueryRowContext(ctx, insertQuery, insertArgs...).Scan(
-		&newCart.CartID,
+		&newCart.ID,
 		&newCart.UserID,
 		&newCart.SessionID,
 		&newCart.Status,
@@ -109,7 +113,7 @@ func (r *cartRepository) UpsertItem(ctx context.Context, tx *sql.Tx, item *cart.
 }
 
 type CartItemDB struct {
-	CartItemID string
+	CartItemID int64
 	ProductID  int64
 	Quantity   int
 	PriceAtAdd float64
@@ -235,12 +239,12 @@ func (r *cartRepository) GetCartItemForUpdate(ctx context.Context, tx *sql.Tx, c
 
 func (r *cartRepository) GetActiveCartByUserID(ctx context.Context, tx *sql.Tx, userID int64) (*cart.Cart, error) {
 	query := `
-		SELECT cart_id, user_id, session_id, status
+		SELECT id, user_id, session_id, status
 		FROM carts WHERE user_id = $1 AND status = 'active' LIMIT 1
 	`
 	c := new(cart.Cart)
 	err := tx.QueryRowContext(ctx, query, userID).Scan(
-		&c.CartID,
+		&c.ID,
 		&c.UserID,
 		&c.SessionID,
 		&c.Status,
