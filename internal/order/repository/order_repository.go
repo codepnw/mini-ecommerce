@@ -13,11 +13,15 @@ import (
 //go:generate mockgen -source=order_repository.go -destination=mock_order_repository.go -package=orderrepository
 
 type OrderRepository interface {
+	GetMyOrders(ctx context.Context, userID int64) ([]*order.Order, error)
+	GetOrder(ctx context.Context, orderID int64) (*order.Order, error)
+
+	// DB or Tx
+	GetOrderItems(ctx context.Context, exec database.DBExec, orderID int64) ([]*OrderItemDetail, error)
+
+	// Transaction
 	CreateOrder(ctx context.Context, tx *sql.Tx, input *order.Order) (int64, error)
 	CreateOrderItem(ctx context.Context, tx *sql.Tx, input *order.OrderItem) error
-	GetOrder(ctx context.Context, orderID int64) (*order.Order, error)
-	GetOrderItems(ctx context.Context, exec database.DBExec, orderID int64) ([]*OrderItemDetail, error)
-	GetMyOrders(ctx context.Context, userID int64) ([]*order.Order, error)
 	UpdateStatus(ctx context.Context, tx *sql.Tx, orderID int64, status string) error
 }
 
@@ -168,11 +172,18 @@ func (r *orderRepository) GetMyOrders(ctx context.Context, userID int64) ([]*ord
 
 func (r *orderRepository) UpdateStatus(ctx context.Context, tx *sql.Tx, orderID int64, status string) error {
 	query := `UPDATE orders SET status = $1 WHERE id = $2`
-	_, err := tx.ExecContext(ctx, query, status, orderID)
+	res, err := tx.ExecContext(ctx, query, status, orderID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return errs.ErrOrderNotFound
-		}
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errs.ErrOrderNotFound
 	}
 	return nil
 }

@@ -56,6 +56,9 @@ func (h *orderHandler) GetOrderDetail(c *gin.Context) {
 		case errs.ErrNoPermissions:
 			response.Forbidden(c, err.Error())
 			return
+		case errs.ErrOrderNotFound:
+			response.NotFound(c, err.Error())
+			return
 		default:
 			response.InternalServerError(c, err)
 			return
@@ -97,6 +100,9 @@ func (h *orderHandler) CancelOrder(c *gin.Context) {
 			return
 		case errs.ErrCannotCancelOrder:
 			response.BadRequest(c, err.Error())
+			return
+		case errs.ErrOrderNotFound:
+			response.NotFound(c, err.Error())
 			return
 		default:
 			response.InternalServerError(c, err)

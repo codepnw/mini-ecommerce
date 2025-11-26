@@ -161,8 +161,10 @@ func (u *orderUsecase) GetOrderDetail(ctx context.Context, orderID int64) (*Orde
 	itemViews := make([]*OrderItemView, 0)
 	for _, i := range itemsData {
 		itemViews = append(itemViews, &OrderItemView{
+			OrderItemID:     i.ID,
 			ProductID:       i.ProductID,
 			ProductName:     i.ProductName,
+			ProductSKU:      i.ProductSKU,
 			PriceAtPurchase: i.PriceAtPurchase,
 			Quantity:        i.Quantity,
 			Total:           i.PriceAtPurchase * float64(i.Quantity),
@@ -267,10 +269,12 @@ func (u *orderUsecase) UpdateOrderStatus(ctx context.Context, orderID int64, new
 			return err
 		}
 
-		// Return Items
-		err = u.returnItemToStock(ctx, tx, orderID)
-		if err != nil {
-			return err
+		// Return Items (Cancelled Only)
+		if newStatus == order.StatusCancelled {
+			err = u.returnItemToStock(ctx, tx, orderID)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})
