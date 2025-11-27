@@ -1,0 +1,2378 @@
+{
+	"info": {
+		"_postman_id": "32e9d038-f4a6-460d-b349-d8f913739832",
+		"name": "Mini Ecommerce",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3017048"
+	},
+	"item": [
+		{
+			"name": "USER",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test2@mail.com\",\n    \"password\": \"123123\",\n    \"first_name\": \"john\",\n    \"last_name\": \"cena\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/auth/register",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "201 Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test3@mail.com\",\n    \"password\": \"123123\",\n    \"first_name\": \"john\",\n    \"last_name\": \"cena\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/register",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"register"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Nov 2025 09:22:52 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "534"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 201,\n        \"message\": \"created successfully\",\n        \"data\": {\n            \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiRW1haWwiOiJ0ZXN0M0BtYWlsLmNvbSIsIlJvbGUiOiIiLCJpc3MiOiJtaW5pLWVjb21tZXJjZSIsImV4cCI6MTc2Mzk3OTc3MiwiaWF0IjoxNzYzOTc2MTcyfQ.p1BYU_FgpEI3ZjF6F0LiCCbkeuR5qSL10xYaovN9QNU\",\n            \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiRW1haWwiOiJ0ZXN0M0BtYWlsLmNvbSIsIlJvbGUiOiIiLCJpc3MiOiJtaW5pLWVjb21tZXJjZSIsImV4cCI6MTc2NDU4MDk3MiwiaWF0IjoxNzYzOTc2MTcyfQ.Mvc5vDeTHhIjWSAHj-p95C-7JCxEfMiwxljCgY_sBcA\"\n        }\n    }\n}"
+						},
+						{
+							"name": "400 Email Exists",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test3@mail.com\",\n    \"password\": \"123123\",\n    \"first_name\": \"john\",\n    \"last_name\": \"cena\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/register",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"register"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:11:35 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "76"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"email already exists\"\n    }\n}"
+						},
+						{
+							"name": "400 Required Tag",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test3@mail.com\",\n    // \"password\": \"123123\",\n    \"first_name\": \"john\",\n    \"last_name\": \"cena\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/register",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"register"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:12:07 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "152"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"Key: 'UserCreateReq.Password' Error:Field validation for 'Password' failed on the 'required' tag\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json()",
+									"",
+									"pm.environment.set(\"access_token\", response.response.data.access_token)",
+									"pm.environment.set(\"refresh_token\", response.response.data.refresh_token)"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test2@mail.com\",\n    \"password\": \"123123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/auth/login",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test1@mail.com\",\n    \"password\": \"123123\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/login",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:05:37 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "544"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"login successfully\",\n        \"data\": {\n            \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MSwiRW1haWwiOiJ0ZXN0MUBtYWlsLmNvbSIsIlJvbGUiOiJhZG1pbiIsImlzcyI6Im1pbmktZWNvbW1lcmNlIiwiZXhwIjoxNzY0MDgzMTM3LCJpYXQiOjE3NjQwNzk1Mzd9.Hxuq2KBAiWUPjaZkFH2X6nobRsz3i4LucVzHjwZf_KI\",\n            \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MSwiRW1haWwiOiJ0ZXN0MUBtYWlsLmNvbSIsIlJvbGUiOiJhZG1pbiIsImlzcyI6Im1pbmktZWNvbW1lcmNlIiwiZXhwIjoxNzY0Njg0MzM3LCJpYXQiOjE3NjQwNzk1Mzd9.SVZymnUaaoscBSQBxtD9Xltgr3kdNIWG6eXMW0uQgTE\"\n        }\n    }\n}"
+						},
+						{
+							"name": "400 Invalid Email Password",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test1@mail.com\",\n    \"password\": \"1231233\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/login",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:13:14 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "81"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"invalid email or password\"\n    }\n}"
+						},
+						{
+							"name": "400 Required Tag",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test1@mail.com\"\n    // \"password\": \"123123\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/login",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:14:44 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "151"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"Key: 'UserLoginReq.Password' Error:Field validation for 'Password' failed on the 'required' tag\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh_token\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/auth/refresh-token",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"auth",
+								"refresh-token"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MSwiRW1haWwiOiJ0ZXN0MUBtYWlsLmNvbSIsIlJvbGUiOiJhZG1pbiIsImlzcyI6Im1pbmktZWNvbW1lcmNlIiwiZXhwIjoxNzY0Njg1MDc4LCJpYXQiOjE3NjQwODAyNzh9.cfaHJNaa83G_0bkL4qqqxgW58SWVxrqRcd83NcXADdY\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/refresh-token",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"refresh-token"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:18:14 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "557"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"generate new token successfully\",\n        \"data\": {\n            \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MSwiRW1haWwiOiJ0ZXN0MUBtYWlsLmNvbSIsIlJvbGUiOiJhZG1pbiIsImlzcyI6Im1pbmktZWNvbW1lcmNlIiwiZXhwIjoxNzY0MDgzODk0LCJpYXQiOjE3NjQwODAyOTR9.YIpJA6U0nQefAeVVFwk9TWU_HSqMy-r0t3h6-kAslac\",\n            \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MSwiRW1haWwiOiJ0ZXN0MUBtYWlsLmNvbSIsIlJvbGUiOiJhZG1pbiIsImlzcyI6Im1pbmktZWNvbW1lcmNlIiwiZXhwIjoxNzY0Njg1MDk0LCJpYXQiOjE3NjQwODAyOTR9.s9Bq2CylOVbPqjVknRu6WN8yNgaJ8KOSQ1zBD1tpExk\"\n        }\n    }\n}"
+						},
+						{
+							"name": "401 Token Expires",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MSwiRW1haWwiOiJ0ZXN0MUBtYWlsLmNvbSIsIlJvbGUiOiJhZG1pbiIsImlzcyI6Im1pbmktZWNvbW1lcmNlIiwiZXhwIjoxNzY0Njg1MzE4LCJpYXQiOjE3NjQwODA1MTh9.XpEEO29wlkscFbL8S-ElngtXzGa9cH0fiusDj0LWXBQ\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/refresh-token",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"refresh-token"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:22:50 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "70"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 401,\n        \"type\": \"UNAUTHORIZED\",\n        \"message\": \"token expires\"\n    }\n}"
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiRW1haWwiOiJ0ZXN0M0BtYWlsLmNvbSIsIlJvbGUiOiJ1c2VyIiwiaXNzIjoibWluaS1lY29tbWVyY2UiLCJleHAiOjE3NjQ1ODEwNDcsImlhdCI6MTc2Mzk3NjI0N30.GOrmlZ6b4l7xALnsJ-rlG6XXNAhWhnkkpuy0F71O7l4\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/refresh-token",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"refresh-token"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:17:04 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "69"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"token not found\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh_token\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/auth/logout",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "204 No Content",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiRW1haWwiOiJ0ZXN0M0BtYWlsLmNvbSIsIlJvbGUiOiJ1c2VyIiwiaXNzIjoibWluaS1lY29tbWVyY2UiLCJleHAiOjE3NjQ1ODEwNTcsImlhdCI6MTc2Mzk3NjI1N30.8jYJFcpkVcHTWRv89iEdTjZ85e0M_M-Y6B20fTa89ro\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/logout",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"logout"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:24:43 GMT"
+								}
+							],
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiRW1haWwiOiJ0ZXN0M0BtYWlsLmNvbSIsIlJvbGUiOiJ1c2VyIiwiaXNzIjoibWluaS1lY29tbWVyY2UiLCJleHAiOjE3NjQ1ODEwNTcsImlhdCI6MTc2Mzk3NjI1N30.8jYJFcpkVcHTWRv89iEdTjZ85e0M_M-Y6B20fTa89ro222\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/auth/logout",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"auth",
+										"logout"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:25:53 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "69"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"token not found\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "PRODUCT",
+			"item": [
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Macbook Pro M5 2025\",\n    \"price\": 55000.00,\n    \"stock\": 10,\n    \"sku\": \"macbookpro-m5-2025\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/products",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Macbook Pro M5 2025\",\n    \"price\": 55000.00,\n    \"stock\": 10,\n    \"sku\": \"macbookpro-m5-2025\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Nov 2025 12:19:48 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "254"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 201,\n        \"message\": \"created successfully\",\n        \"data\": {\n            \"id\": 4,\n            \"name\": \"Macbook Pro M5 2025\",\n            \"price\": 55000,\n            \"stock\": 10,\n            \"sku\": \"macbookpro-m5-2025\",\n            \"owner_id\": 1,\n            \"created_at\": \"2025-11-24T12:19:48.351762Z\",\n            \"updated_at\": \"2025-11-24T12:19:48.351762Z\"\n        }\n    }\n}"
+						},
+						{
+							"name": "400 Bad Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Macbook Pro M5 2025\",\n    \"price\": 55000.00,\n    \"stock\": 10\n    // \"sku\": \"macbookpro-m5-2025\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:57:21 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "145"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"Key: 'ProductCreateReq.SKU' Error:Field validation for 'SKU' failed on the 'required' tag\"\n    }\n}"
+						},
+						{
+							"name": "401 Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Macbook Pro M5 2025\",\n    \"price\": 55000.00,\n    \"stock\": 10\n    \"sku\": \"macbookpro-m5-2025\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:58:51 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "79"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 401,\n        \"type\": \"UNAUTHORIZED\",\n        \"message\": \"auth header is missing\"\n    }\n}"
+						},
+						{
+							"name": "403 No Permission",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Macbook Pro M5 2025\",\n    \"price\": 55000.00,\n    \"stock\": 10\n    \"sku\": \"macbookpro-m5-2025\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:46:21 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "68"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 403,\n        \"type\": \"FORBIDDEN\",\n        \"message\": \"no permissions\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "List",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "search",
+									"value": "macbook",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{default}}/products?search=&limit&page=",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"products"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "limit",
+									"value": null
+								},
+								{
+									"key": "page",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "search",
+											"value": "macbook",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{default}}/products?search=&limit&page=",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products"
+									],
+									"query": [
+										{
+											"key": "search",
+											"value": ""
+										},
+										{
+											"key": "limit",
+											"value": null
+										},
+										{
+											"key": "page",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:59:41 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "418"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": [\n            {\n                \"id\": 4,\n                \"name\": \"New Macbook Pro\",\n                \"price\": 57900,\n                \"stock\": 7,\n                \"sku\": \"macbookpro-m5-2025\",\n                \"owner_id\": 1,\n                \"created_at\": \"2025-11-24T12:19:48.351762Z\",\n                \"updated_at\": \"2025-11-24T12:29:17.081013Z\"\n            },\n            {\n                \"id\": 3,\n                \"name\": \"IPad M5 2025\",\n                \"price\": 25000,\n                \"stock\": 5,\n                \"sku\": \"ipad-m5-2025\",\n                \"owner_id\": 1,\n                \"created_at\": \"2025-11-24T12:19:02.598318Z\",\n                \"updated_at\": \"2025-11-24T12:19:02.598318Z\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get ID",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Macbook Pro M3\",\n    \"price\": 67000.00,\n    \"stock\": 8\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/products/4",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"products",
+								"4"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Macbook Pro M3\",\n    \"price\": 67000.00,\n    \"stock\": 8\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/4",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"4"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:01:04 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "241"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": {\n            \"id\": 4,\n            \"name\": \"New Macbook Pro\",\n            \"price\": 57900,\n            \"stock\": 7,\n            \"sku\": \"macbookpro-m5-2025\",\n            \"owner_id\": 1,\n            \"created_at\": \"2025-11-24T12:19:48.351762Z\",\n            \"updated_at\": \"2025-11-24T12:29:17.081013Z\"\n        }\n    }\n}"
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Macbook Pro M3\",\n    \"price\": 67000.00,\n    \"stock\": 8\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/44",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"44"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:01:34 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "71"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"product not found\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New Macbook Pro\",\n    \"price\": 57900,\n    \"stock\": 7\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/products/4",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"products",
+								"4"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"New Macbook Pro\",\n    \"price\": 57900,\n    \"stock\": 7\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/4",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"4"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Nov 2025 12:29:17 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "241"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": {\n            \"id\": 4,\n            \"name\": \"New Macbook Pro\",\n            \"price\": 57900,\n            \"stock\": 7,\n            \"sku\": \"macbookpro-m5-2025\",\n            \"owner_id\": 1,\n            \"created_at\": \"2025-11-24T12:19:48.351762Z\",\n            \"updated_at\": \"2025-11-24T12:29:17.081013Z\"\n        }\n    }\n}"
+						},
+						{
+							"name": "400 Bad Request",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"New Macbook Pro\",\n    \"price\": 62900,\n    \"stock\": -7\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/44",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"44"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:07:20 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "143"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"Key: 'ProductUpdateReq.Stock' Error:Field validation for 'Stock' failed on the 'gt' tag\"\n    }\n}"
+						},
+						{
+							"name": "401 Token Failed",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"New Macbook Pro\",\n    \"price\": 57900,\n    \"stock\": 7\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/44",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"44"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:03:49 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "76"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 401,\n        \"type\": \"UNAUTHORIZED\",\n        \"message\": \"verify token failed\"\n    }\n}"
+						},
+						{
+							"name": "401 No Header",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"New Macbook Pro\",\n    \"price\": 62900,\n    \"stock\": 7\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/4",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"4"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:06:07 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "79"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 401,\n        \"type\": \"UNAUTHORIZED\",\n        \"message\": \"auth header is missing\"\n    }\n}"
+						},
+						{
+							"name": "403 No Permission",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    // \"name\": \"New Macbook Pro\",\n    \"price\": 35900,\n    // \"stock\": -7\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/2",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"2"
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:45:26 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "68"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 403,\n        \"type\": \"FORBIDDEN\",\n        \"message\": \"no permissions\"\n    }\n}"
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"New Macbook Pro\",\n    \"price\": 62900,\n    \"stock\": 7\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/44",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"44"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:06:46 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "71"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"product not found\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    // \"name\": \"Macbook Pro M3\",\n    \"price\": 57900,\n    \"stock\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/products/1",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"products",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "204 No Content",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    // \"name\": \"Macbook Pro M3\",\n    \"price\": 57900,\n    \"stock\": 4\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/1",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"1"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 24 Nov 2025 12:29:55 GMT"
+								}
+							],
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "401 No Header",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    // \"name\": \"Macbook Pro M3\",\n    \"price\": 57900,\n    \"stock\": 4\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/11",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"11"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:09:48 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "79"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 401,\n        \"type\": \"UNAUTHORIZED\",\n        \"message\": \"auth header is missing\"\n    }\n}"
+						},
+						{
+							"name": "403 No Permission",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    // \"name\": \"Macbook Pro M3\",\n    \"price\": 57900,\n    \"stock\": 4\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/11",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"11"
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:46:52 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "68"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 403,\n        \"type\": \"FORBIDDEN\",\n        \"message\": \"no permissions\"\n    }\n}"
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    // \"name\": \"Macbook Pro M3\",\n    \"price\": 57900,\n    \"stock\": 4\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/products/11",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"products",
+										"11"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 14:09:30 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "71"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"product not found\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "CART",
+			"item": [
+				{
+					"name": "Add Item",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_id\": 3,\n    \"quantity\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/cart",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"product_id\": 3,\n    \"quantity\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:03:12 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "522"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": {\n            \"cart_id\": \"2303f84e-bcc7-4bfc-9a67-421fd4e044b6\",\n            \"user_id\": 1,\n            \"items\": [\n                {\n                    \"cart_item_id\": 3,\n                    \"product_id\": 3,\n                    \"quantity\": 1,\n                    \"name\": \"IPad M5 2025\",\n                    \"price\": 25000,\n                    \"stock\": 5,\n                    \"sku\": \"ipad-m5-2025\",\n                    \"is_price_changed\": false,\n                    \"is_out_of_stock\": false\n                },\n                {\n                    \"cart_item_id\": 1,\n                    \"product_id\": 4,\n                    \"quantity\": 3,\n                    \"name\": \"New Macbook Pro\",\n                    \"price\": 57900,\n                    \"stock\": 7,\n                    \"sku\": \"macbookpro-m5-2025\",\n                    \"is_price_changed\": false,\n                    \"is_out_of_stock\": false\n                }\n            ],\n            \"total_price\": 198700,\n            \"total_items\": 4,\n            \"has_changed\": false\n        }\n    }\n}"
+						},
+						{
+							"name": "404 Product Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"product_id\": 33,\n    \"quantity\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:08:22 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "71"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"product not found\"\n    }\n}"
+						},
+						{
+							"name": "400 Not Enough",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"product_id\": 3,\n    \"quantity\": 111\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:11:47 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "80"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"product not enough stock\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Cart",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_id\": 3,\n    \"quantity\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/cart",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"product_id\": 3,\n    \"quantity\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:48:45 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "519"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": {\n            \"cart_id\": \"5596be3b-342b-477f-a649-5df50dd13729\",\n            \"user_id\": 2,\n            \"items\": [\n                {\n                    \"cart_item_id\": 2,\n                    \"product_id\": 2,\n                    \"quantity\": 2,\n                    \"name\": \"MacBook Air M3\",\n                    \"price\": 39900,\n                    \"stock\": 5,\n                    \"sku\": \"MAC-AIR-M3\",\n                    \"is_price_changed\": false,\n                    \"is_out_of_stock\": false\n                },\n                {\n                    \"cart_item_id\": 1,\n                    \"product_id\": 3,\n                    \"quantity\": 1,\n                    \"name\": \"Mechanical Keyboard\",\n                    \"price\": 2500,\n                    \"stock\": 20,\n                    \"sku\": \"KEY-MECH-RGB\",\n                    \"is_price_changed\": false,\n                    \"is_out_of_stock\": false\n                }\n            ],\n            \"total_price\": 82300,\n            \"total_items\": 3,\n            \"has_changed\": false\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Quantity",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"new_quantity\": 111\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/cart/items/1",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"cart",
+								"items",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"new_quantity\": 2\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart/items/1",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart",
+										"items",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:50:45 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "527"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"new quantity updated\",\n        \"data\": {\n            \"cart_id\": \"5596be3b-342b-477f-a649-5df50dd13729\",\n            \"user_id\": 2,\n            \"items\": [\n                {\n                    \"cart_item_id\": 2,\n                    \"product_id\": 2,\n                    \"quantity\": 2,\n                    \"name\": \"MacBook Air M3\",\n                    \"price\": 39900,\n                    \"stock\": 5,\n                    \"sku\": \"MAC-AIR-M3\",\n                    \"is_price_changed\": false,\n                    \"is_out_of_stock\": false\n                },\n                {\n                    \"cart_item_id\": 1,\n                    \"product_id\": 3,\n                    \"quantity\": 2,\n                    \"name\": \"Mechanical Keyboard\",\n                    \"price\": 2500,\n                    \"stock\": 20,\n                    \"sku\": \"KEY-MECH-RGB\",\n                    \"is_price_changed\": false,\n                    \"is_out_of_stock\": false\n                }\n            ],\n            \"total_price\": 84800,\n            \"total_items\": 4,\n            \"has_changed\": false\n        }\n    }\n}"
+						},
+						{
+							"name": "400 Item not in Cart",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"new_quantity\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart/items/11",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart",
+										"items",
+										"11"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:14:13 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "72"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"item not in cart\"\n    }\n}"
+						},
+						{
+							"name": "400 Not Enough",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"new_quantity\": 111\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart/items/1",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart",
+										"items",
+										"1"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Nov 2025 13:14:53 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "80"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 400,\n        \"type\": \"BAD_REQUEST\",\n        \"message\": \"product not enough stock\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Item",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"new_quantity\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{default}}/cart/items/3",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"cart",
+								"items",
+								"3"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"new_quantity\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{default}}/cart/items/1",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"cart",
+										"items",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:51:48 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "348"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"item remove\",\n        \"data\": {\n            \"cart_id\": \"5596be3b-342b-477f-a649-5df50dd13729\",\n            \"user_id\": 2,\n            \"items\": [\n                {\n                    \"cart_item_id\": 2,\n                    \"product_id\": 2,\n                    \"quantity\": 2,\n                    \"name\": \"MacBook Air M3\",\n                    \"price\": 39900,\n                    \"stock\": 5,\n                    \"sku\": \"MAC-AIR-M3\",\n                    \"is_price_changed\": false,\n                    \"is_out_of_stock\": false\n                }\n            ],\n            \"total_price\": 79800,\n            \"total_items\": 2,\n            \"has_changed\": false\n        }\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "ORDER",
+			"item": [
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{default}}/orders",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{default}}/orders",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"orders"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:52:22 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "183"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": {\n            \"id\": 1,\n            \"user_id\": 2,\n            \"total\": 79800,\n            \"status\": \"pending\",\n            \"created_at\": \"0001-01-01T00:00:00Z\",\n            \"updated_at\": \"0001-01-01T00:00:00Z\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{default}}/orders/2",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"orders",
+								"2"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{default}}/orders/1",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"orders",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Nov 2025 09:53:01 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "274"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": {\n            \"id\": 1,\n            \"status\": \"pending\",\n            \"total\": 79800,\n            \"created_at\": \"2025-11-27T09:52:22Z\",\n            \"items\": [\n                {\n                    \"item_id\": 1,\n                    \"quantity\": 2,\n                    \"price\": 39900,\n                    \"total\": 79800,\n                    \"product_id\": 2,\n                    \"product_name\": \"MacBook Air M3\",\n                    \"product_sku\": \"MAC-AIR-M3\"\n                }\n            ]\n        }\n    }\n}"
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{default}}/orders/2",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"orders",
+										"2"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 26 Nov 2025 12:11:09 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "69"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"order not found\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Cancel",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{default}}/orders/2",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"orders",
+								"2"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{default}}/orders/1",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"orders",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 26 Nov 2025 12:26:13 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "65"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"order cancelled\",\n        \"data\": null\n    }\n}"
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{default}}/orders/11",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"orders",
+										"11"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 26 Nov 2025 12:27:26 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "69"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": {\n        \"code\": 404,\n        \"type\": \"NOT_FOUND\",\n        \"message\": \"order not found\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "My Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{default}}/orders",
+							"host": [
+								"{{default}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{default}}/orders",
+									"host": [
+										"{{default}}"
+									],
+									"path": [
+										"orders"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 26 Nov 2025 12:27:48 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "139"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": {\n        \"code\": 200,\n        \"message\": \"successfully\",\n        \"data\": [\n            {\n                \"id\": 1,\n                \"status\": \"cancelled\",\n                \"total\": 25000,\n                \"created_at\": \"2025-11-26T12:09:30Z\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
