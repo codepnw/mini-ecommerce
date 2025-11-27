@@ -21,31 +21,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockTxManager struct{}
-
-func (m *mockTxManager) WithTransaction(ctx context.Context, fn func(tx *sql.Tx) error) error {
-	return fn(nil)
-}
-
-type mockDB struct{}
-
-func (m *mockDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	return nil
-}
-
-func (m *mockDB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return nil, nil
-}
-
-func (m *mockDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	return nil, nil
-}
-
 func TestCreateOrder(t *testing.T) {
 	type testCase struct {
 		name        string
 		userID      int64
-		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64)
 		expectedErr error
 	}
 
@@ -53,9 +33,9 @@ func TestCreateOrder(t *testing.T) {
 		{
 			name:   "success",
 			userID: 10,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64) {
 				mockCart := &cart.Cart{ID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
-				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), int64(10)).Return(mockCart, nil).Times(1)
+				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), userID).Return(mockCart, nil).Times(1)
 
 				mockItems := []*cartrepository.CartItemDB{
 					{CartItemID: 100, ProductID: 1, Price: 100, Quantity: 2},
@@ -102,9 +82,9 @@ func TestCreateOrder(t *testing.T) {
 		{
 			name:   "fail product not enough",
 			userID: 10,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64) {
 				mockCart := &cart.Cart{ID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
-				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), int64(10)).Return(mockCart, nil).Times(1)
+				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), userID).Return(mockCart, nil).Times(1)
 
 				mockItems := []*cartrepository.CartItemDB{
 					{CartItemID: 100, ProductID: 1, Price: 100, Quantity: 2},
@@ -125,9 +105,9 @@ func TestCreateOrder(t *testing.T) {
 		{
 			name:   "fail db error",
 			userID: 10,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64) {
 				mockCart := &cart.Cart{ID: "cart-001", UserID: sql.NullInt64{Int64: 10}}
-				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), int64(10)).Return(mockCart, nil).Times(1)
+				cartRepo.EXPECT().GetActiveCartByUserID(gomock.Any(), gomock.Any(), userID).Return(mockCart, nil).Times(1)
 
 				mockItems := []*cartrepository.CartItemDB{
 					{CartItemID: 100, ProductID: 1, Price: 100, Quantity: 2},
@@ -175,18 +155,9 @@ func TestCreateOrder(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			uc, orderRepo, prodRepo, cartRepo := setup(t)
 
-			orderRepo := orderrepository.NewMockOrderRepository(ctrl)
-			cartRepo := cartrepository.NewMockCartRepository(ctrl)
-			prodRepo := productrepository.NewMockProductRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockDB := &mockDB{}
-
-			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
-
-			tc.mockFn(orderRepo, prodRepo, cartRepo)
+			tc.mockFn(orderRepo, prodRepo, cartRepo, tc.userID)
 
 			// Set UserID
 			ctx := context.Background()
@@ -211,7 +182,7 @@ func TestGetOrderDetail(t *testing.T) {
 		name        string
 		userID      int64
 		orderID     int64
-		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64)
 		expectedErr error
 	}
 
@@ -220,13 +191,9 @@ func TestGetOrderDetail(t *testing.T) {
 			name:    "success",
 			userID:  10,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{
-					ID:     100,
-					UserID: 10,
-					Status: "pending",
-				}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
+				o := mockOrder()
+				orderRepo.EXPECT().GetOrder(gomock.Any(), orderID).Return(o, nil).Times(1)
 
 				mockItems := []*orderrepository.OrderItemDetail{
 					{
@@ -242,7 +209,7 @@ func TestGetOrderDetail(t *testing.T) {
 						Quantity:        1,
 					},
 				}
-				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(mockItems, nil).Times(1)
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), o.ID).Return(mockItems, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
@@ -250,7 +217,7 @@ func TestGetOrderDetail(t *testing.T) {
 			name:    "fail unauthorized",
 			userID:  0,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
 			},
 			expectedErr: errs.ErrNoPermissions,
 		},
@@ -258,8 +225,8 @@ func TestGetOrderDetail(t *testing.T) {
 			name:    "fail get order",
 			userID:  10,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(nil, errors.New("db error")).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
+				orderRepo.EXPECT().GetOrder(gomock.Any(), orderID).Return(nil, errors.New("db error")).Times(1)
 			},
 			expectedErr: errors.New("db error"),
 		},
@@ -267,13 +234,10 @@ func TestGetOrderDetail(t *testing.T) {
 			name:    "fail no permissions",
 			userID:  10,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{
-					ID:     100,
-					UserID: 11,
-					Status: "pending",
-				}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
+				o := mockOrder()
+				o.UserID = 11
+				orderRepo.EXPECT().GetOrder(gomock.Any(), orderID).Return(o, nil).Times(1)
 			},
 			expectedErr: errs.ErrNoPermissions,
 		},
@@ -281,33 +245,20 @@ func TestGetOrderDetail(t *testing.T) {
 			name:    "fail get items",
 			userID:  10,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{
-					ID:     100,
-					UserID: 10,
-					Status: "pending",
-				}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
+				o := mockOrder()
+				orderRepo.EXPECT().GetOrder(gomock.Any(), orderID).Return(o, nil).Times(1)
 
-				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(nil, errors.New("db error")).Times(1)
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), o.ID).Return(nil, errors.New("db error")).Times(1)
 			},
 			expectedErr: errors.New("db error"),
 		},
 	}
 
 	for _, tc := range testCases {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+		uc, orderRepo, prodRepo, cartRepo := setup(t)
 
-		orderRepo := orderrepository.NewMockOrderRepository(ctrl)
-		cartRepo := cartrepository.NewMockCartRepository(ctrl)
-		prodRepo := productrepository.NewMockProductRepository(ctrl)
-		mockTx := &mockTxManager{}
-		mockDB := &mockDB{}
-
-		uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
-
-		tc.mockFn(orderRepo, prodRepo, cartRepo)
+		tc.mockFn(orderRepo, prodRepo, cartRepo, tc.orderID)
 
 		// Set UserID
 		ctx := context.Background()
@@ -330,7 +281,7 @@ func TestGetMyOrders(t *testing.T) {
 	type testCase struct {
 		name        string
 		userID      int64
-		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64)
 		expectedErr error
 	}
 
@@ -338,27 +289,27 @@ func TestGetMyOrders(t *testing.T) {
 		{
 			name:   "success",
 			userID: 10,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64) {
 				mockOrders := []*order.Order{
 					{ID: 1, Status: "pending", Total: 100, CreatedAt: time.Now()},
 					{ID: 2, Status: "pending", Total: 200, CreatedAt: time.Now()},
 				}
-				orderRepo.EXPECT().GetMyOrders(gomock.Any(), int64(10)).Return(mockOrders, nil).Times(1)
+				orderRepo.EXPECT().GetMyOrders(gomock.Any(), userID).Return(mockOrders, nil).Times(1)
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "fail unauthorized",
 			userID: 0,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64) {
 			},
 			expectedErr: errs.ErrUnauthorized,
 		},
 		{
 			name:   "fail get orders",
 			userID: 10,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				orderRepo.EXPECT().GetMyOrders(gomock.Any(), int64(10)).Return(nil, errors.New("db error")).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, userID int64) {
+				orderRepo.EXPECT().GetMyOrders(gomock.Any(), userID).Return(nil, errors.New("db error")).Times(1)
 			},
 			expectedErr: errors.New("db error"),
 		},
@@ -366,18 +317,9 @@ func TestGetMyOrders(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			uc, orderRepo, prodRepo, cartRepo := setup(t)
 
-			orderRepo := orderrepository.NewMockOrderRepository(ctrl)
-			cartRepo := cartrepository.NewMockCartRepository(ctrl)
-			prodRepo := productrepository.NewMockProductRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockDB := &mockDB{}
-
-			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
-
-			tc.mockFn(orderRepo, prodRepo, cartRepo)
+			tc.mockFn(orderRepo, prodRepo, cartRepo, tc.userID)
 
 			// Set UserID
 			ctx := context.Background()
@@ -402,7 +344,7 @@ func TestCancelOrder(t *testing.T) {
 		name        string
 		userID      int64
 		orderID     int64
-		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64)
 		expectedErr error
 	}
 
@@ -411,21 +353,17 @@ func TestCancelOrder(t *testing.T) {
 			name:    "success",
 			userID:  10,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{
-					ID:     100,
-					UserID: 10,
-					Status: string(order.StatusPending),
-				}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
+				o := mockOrder()
+				orderRepo.EXPECT().GetOrder(gomock.Any(), orderID).Return(o, nil).Times(1)
 
-				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), int64(mockOrder.ID), string(order.StatusCancelled)).Return(nil).Times(1)
+				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), int64(o.ID), string(order.StatusCancelled)).Return(nil).Times(1)
 
 				mockItems := []*orderrepository.OrderItemDetail{
 					{ID: 1, ProductID: 100, Quantity: 2},
 					{ID: 2, ProductID: 101, Quantity: 5},
 				}
-				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(mockItems, nil).Times(1)
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), o.ID).Return(mockItems, nil).Times(1)
 
 				for _, i := range mockItems {
 					prodRepo.EXPECT().IncreaseStock(gomock.Any(), gomock.Any(), i.ProductID, i.Quantity).Return(nil).Times(1)
@@ -437,7 +375,7 @@ func TestCancelOrder(t *testing.T) {
 			name:    "fail user id",
 			userID:  0,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
 			},
 			expectedErr: errs.ErrUnauthorized,
 		},
@@ -445,13 +383,10 @@ func TestCancelOrder(t *testing.T) {
 			name:    "fail cannot cancel",
 			userID:  10,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{
-					ID:     100,
-					UserID: 10,
-					Status: string(order.StatusCancelled),
-				}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
+				o := mockOrder()
+				o.Status = string(order.StatusCancelled)
+				orderRepo.EXPECT().GetOrder(gomock.Any(), orderID).Return(o, nil).Times(1)
 			},
 			expectedErr: errs.ErrCannotCancelOrder,
 		},
@@ -459,17 +394,13 @@ func TestCancelOrder(t *testing.T) {
 			name:    "fail get items",
 			userID:  10,
 			orderID: 100,
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{
-					ID:     100,
-					UserID: 10,
-					Status: string(order.StatusPending),
-				}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, orderID int64) {
+				o := mockOrder()
+				orderRepo.EXPECT().GetOrder(gomock.Any(), orderID).Return(o, nil).Times(1)
 
-				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), int64(mockOrder.ID), string(order.StatusCancelled)).Return(nil).Times(1)
+				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), int64(o.ID), string(order.StatusCancelled)).Return(nil).Times(1)
 
-				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(nil, errors.New("db error")).Times(1)
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), o.ID).Return(nil, errors.New("db error")).Times(1)
 			},
 			expectedErr: errors.New("db error"),
 		},
@@ -477,18 +408,9 @@ func TestCancelOrder(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			uc, orderRepo, prodRepo, cartRepo := setup(t)
 
-			orderRepo := orderrepository.NewMockOrderRepository(ctrl)
-			cartRepo := cartrepository.NewMockCartRepository(ctrl)
-			prodRepo := productrepository.NewMockProductRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockDB := &mockDB{}
-
-			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
-
-			tc.mockFn(orderRepo, prodRepo, cartRepo)
+			tc.mockFn(orderRepo, prodRepo, cartRepo, tc.orderID)
 
 			// Set UserID
 			ctx := context.Background()
@@ -510,30 +432,30 @@ func TestCancelOrder(t *testing.T) {
 func TestUpdateOrderStatus(t *testing.T) {
 	type testCase struct {
 		name        string
-		user        *jwt.UserClaims
-		orderID     int64
-		status      string
-		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository)
+		input       *mockOrderInput
+		mockFn      func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, input *mockOrderInput)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name:    "success",
-			user:    &jwt.UserClaims{ID: 100, Role: "admin"},
-			orderID: 100,
-			status:  "paid",
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{ID: 100, Status: "pending"}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			name: "success",
+			input: &mockOrderInput{
+				user:    &jwt.UserClaims{ID: 100, Role: "admin"},
+				orderID: 100,
+				status:  "paid",
+			},
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, input *mockOrderInput) {
+				o := mockOrder()
+				orderRepo.EXPECT().GetOrder(gomock.Any(), input.orderID).Return(o, nil).Times(1)
 
-				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), mockOrder.ID, "paid").Return(nil).Times(1)
+				orderRepo.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), o.ID, input.status).Return(nil).Times(1)
 
 				mockItems := []*orderrepository.OrderItemDetail{
 					{ProductID: 100, Quantity: 2},
 					{ProductID: 101, Quantity: 1},
 				}
-				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), mockOrder.ID).Return(mockItems, nil).Times(1)
+				orderRepo.EXPECT().GetOrderItems(gomock.Any(), gomock.Any(), o.ID).Return(mockItems, nil).Times(1)
 
 				for _, i := range mockItems {
 					prodRepo.EXPECT().IncreaseStock(gomock.Any(), gomock.Any(), i.ProductID, i.Quantity).Return(nil).Times(1)
@@ -542,22 +464,26 @@ func TestUpdateOrderStatus(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:    "fail no permissions",
-			user:    &jwt.UserClaims{ID: 100, Role: "user"},
-			orderID: 100,
-			status:  "paid",
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
+			name: "fail no permissions",
+			input: &mockOrderInput{
+				user:    &jwt.UserClaims{ID: 100, Role: "user"},
+				orderID: 100,
+				status:  "paid",
+			},
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, input *mockOrderInput) {
 			},
 			expectedErr: errs.ErrNoPermissions,
 		},
 		{
-			name:    "fail invalid status",
-			user:    &jwt.UserClaims{ID: 100, Role: "admin"},
-			orderID: 100,
-			status:  "completed",
-			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository) {
-				mockOrder := &order.Order{ID: 100, Status: "pending"}
-				orderRepo.EXPECT().GetOrder(gomock.Any(), int64(100)).Return(mockOrder, nil).Times(1)
+			name: "fail invalid status",
+			input: &mockOrderInput{
+				user:    &jwt.UserClaims{ID: 100, Role: "admin"},
+				orderID: 100,
+				status:  "completed",
+			},
+			mockFn: func(orderRepo *orderrepository.MockOrderRepository, prodRepo *productrepository.MockProductRepository, cartRepo *cartrepository.MockCartRepository, input *mockOrderInput) {
+				o := mockOrder()
+				orderRepo.EXPECT().GetOrder(gomock.Any(), input.orderID).Return(o, nil).Times(1)
 			},
 			expectedErr: errs.ErrInvalidStatusChange,
 		},
@@ -565,26 +491,17 @@ func TestUpdateOrderStatus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			uc, orderRepo, prodRepo, cartRepo := setup(t)
 
-			orderRepo := orderrepository.NewMockOrderRepository(ctrl)
-			cartRepo := cartrepository.NewMockCartRepository(ctrl)
-			prodRepo := productrepository.NewMockProductRepository(ctrl)
-			mockTx := &mockTxManager{}
-			mockDB := &mockDB{}
-
-			uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
-
-			tc.mockFn(orderRepo, prodRepo, cartRepo)
+			tc.mockFn(orderRepo, prodRepo, cartRepo, tc.input)
 
 			// Set User
 			ctx := context.Background()
-			if tc.user != nil {
-				ctx = auth.SetCurrentUser(ctx, tc.user)
+			if tc.input.user != nil {
+				ctx = auth.SetCurrentUser(ctx, tc.input.user)
 			}
 
-			err := uc.UpdateOrderStatus(ctx, tc.orderID, order.OrderStatus(tc.status))
+			err := uc.UpdateOrderStatus(ctx, tc.input.orderID, order.OrderStatus(tc.input.status))
 
 			if tc.expectedErr != nil {
 				assert.Error(t, err)
@@ -593,4 +510,57 @@ func TestUpdateOrderStatus(t *testing.T) {
 			}
 		})
 	}
+}
+
+// =============== Helper ===================
+// ------------------------------------------
+func setup(t *testing.T) (orderusecase.OrderUsecase, *orderrepository.MockOrderRepository, *productrepository.MockProductRepository, *cartrepository.MockCartRepository) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	orderRepo := orderrepository.NewMockOrderRepository(ctrl)
+	cartRepo := cartrepository.NewMockCartRepository(ctrl)
+	prodRepo := productrepository.NewMockProductRepository(ctrl)
+	mockTx := &mockTxManager{}
+	mockDB := &mockDB{}
+
+	uc := orderusecase.NewOrderUsecase(orderRepo, prodRepo, cartRepo, mockTx, mockDB)
+
+	return uc, orderRepo, prodRepo, cartRepo
+}
+
+type mockOrderInput struct {
+	user    *jwt.UserClaims
+	orderID int64
+	status  string
+}
+
+func mockOrder() *order.Order {
+	return &order.Order{
+		ID:     100,
+		UserID: 10,
+		Status: string(order.StatusPending),
+	}
+}
+
+type mockTxManager struct{}
+
+func (m *mockTxManager) WithTransaction(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	return fn(nil)
+}
+
+type mockDB struct{}
+
+func (m *mockDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	return nil
+}
+
+func (m *mockDB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return nil, nil
+}
+
+func (m *mockDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	return nil, nil
 }
