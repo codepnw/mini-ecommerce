@@ -7,7 +7,7 @@ import (
 	"github.com/codepnw/mini-ecommerce/pkg/routes"
 )
 
-const envPath = "dev.env"
+const envPath = ".env"
 
 func main() {
 	cfg, err := config.LoadConfig(envPath)

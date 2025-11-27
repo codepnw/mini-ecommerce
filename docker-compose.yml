@@ -4,19 +4,20 @@ services:
   api:
     container_name: mini-ecommerce-api
     build: .
+    env_file: .env
     ports:
       - "8080:8080"
     depends_on:
       - db
-    env_file: dev.env
     environment:
       - DB_HOST=db
+      - DB_PORT=5432
       - TZ=Asia/Bangkok
 
   db:
     image: postgres:16-alpine
     container_name: mini-ecommerce-db
-    env_file: dev.env
+    env_file: .env
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -25,8 +26,8 @@ services:
     ports:
       - "${DB_PORT}:5432"
     volumes:
-      - "pg_data:/var/lib/postgresql/data"
-      - /etc/localtime:/etc/localtime:ro
+      - pg_data:/var/lib/postgresql/data
+      - ./scripts:/docker-entrypoint-initdb.d
 
 volumes:
   pg_data:
