@@ -1,8 +1,8 @@
 package carthandler
 
 type AddItemReq struct {
-	ProductID int64 `json:"product_id" validate:"required"`
-	Quantity  int   `json:"quantity" validate:"gt=0"`
+	ProductID int64 `json:"product_id" binding:"required"`
+	Quantity  int   `json:"quantity" binding:"gt=0"`
 }
 
 type UpdateItemQuantityReq struct {

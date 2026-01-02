@@ -6,7 +6,6 @@ import (
 	"github.com/codepnw/mini-ecommerce/internal/utils/errs"
 	"github.com/codepnw/mini-ecommerce/internal/utils/helper"
 	"github.com/codepnw/mini-ecommerce/pkg/response"
-	"github.com/codepnw/mini-ecommerce/pkg/validate"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,10 +20,6 @@ func NewCartHandler(uc cartusecase.CartUsecase) *cartHandler {
 func (h *cartHandler) AddItemToCart(c *gin.Context) {
 	req := new(AddItemReq)
 	if err := c.ShouldBindJSON(req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	if err := validate.Struct(req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -64,10 +59,6 @@ func (h *cartHandler) UpdateItemQuantity(c *gin.Context) {
 
 	req := new(UpdateItemQuantityReq)
 	if err := c.ShouldBindJSON(req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	if err := validate.Struct(req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

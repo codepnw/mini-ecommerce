@@ -1,5 +1,5 @@
 package orderhandler
 
 type UpdateStatusReq struct {
-	Status string `json:"status" validate:"required,oneof=paid shipped cancelled completed"`
+	Status string `json:"status" binding:"required,oneof=paid shipped cancelled completed"`
 }

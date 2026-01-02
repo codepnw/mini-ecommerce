@@ -10,7 +10,6 @@ import (
 	"github.com/codepnw/mini-ecommerce/internal/utils/helper"
 	"github.com/codepnw/mini-ecommerce/pkg/auth"
 	"github.com/codepnw/mini-ecommerce/pkg/response"
-	"github.com/codepnw/mini-ecommerce/pkg/validate"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,10 +24,6 @@ func NewProductHandler(uc productusecase.ProductUsecase) *productHandler {
 func (h *productHandler) Create(c *gin.Context) {
 	req := new(ProductCreateReq)
 	if err := c.ShouldBindJSON(req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	if err := validate.Struct(req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -110,10 +105,6 @@ func (h *productHandler) Update(c *gin.Context) {
 
 	req := new(ProductUpdateReq)
 	if err := c.ShouldBindJSON(req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	if err := validate.Struct(req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
